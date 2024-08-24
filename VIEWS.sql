@@ -1,0 +1,69 @@
+--------------------------------------------------------
+--  DDL for View ADMIN_COMPANY_R
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE EDITIONABLE VIEW "ADMIN_COMPANY_R" ("COMPANY_ID", "NAME_AR", "TAX_NO", "COMERCIAL_REC_NO", "TEL_NO", "MOBILE_NO", "SREET", "LOGO") AS 
+  SELECT 
+com.COMPANY_ID,
+com.NAME_AR,
+	com.TAX_NO,
+	com.COMERCIAL_REC_NO,
+	com.TEL_NO,
+	com.MOBILE_NO,
+	com.SREET,
+	'http://localhost:8000/ords/accounting/trade_v1/get_file?p_mime_type=image/png&p_file_name=Logo-saudi-vision-2030-download-free-PNG.png'  as logo
+FROM ADMIN_COMPANY com
+;
+--------------------------------------------------------
+--  DDL for View SALES_INV_R
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE EDITIONABLE VIEW "SALES_INV_R" ("INVOICE_NO", "INV_TYPE_AR", "INV_TYPE_EN", "C_NAME", "U_NAME", "PRE_TAX_AMOUNT", "TOTAL_DIS", "POST_DIS_AMOUNT", "TOTAL_VAT", "INV_AMOUNT", "INVOICE_DATE", "INVOICE_ID", "QR_CODE") AS 
+  SELECT
+    INVOICE_NO,
+    (
+SELECT
+    'فاتورة ' ||  ITEM_NOTE_AR  INV_TYPE
+FROM
+    ADMIN_LIST_ITEM
+WHERE LIST_ID = 5 AND ITEM_NO = INVOICE_TYPE)
+||' '||
+(
+SELECT
+      'الدفع ' ||    ITEM_NOTE_AR INV_TYPE
+FROM
+    ADMIN_LIST_ITEM
+WHERE LIST_ID = 4 AND ITEM_NO = PAYMENT_TYPE) INV_TYPE_AR ,
+
+(
+SELECT
+     'Invoice '  ||   ITEM_NOTE_EN  INV_TYPE
+FROM
+    ADMIN_LIST_ITEM
+WHERE LIST_ID = 5 AND ITEM_NO = INVOICE_TYPE)
+||' '||
+(
+SELECT
+    'Paied ' ||  ITEM_NOTE_EN  INV_TYPE
+FROM
+    ADMIN_LIST_ITEM
+WHERE LIST_ID = 4 AND ITEM_NO = PAYMENT_TYPE)INV_TYPE_EN ,
+    C.NAME_AR C_NAME,
+    U.USER_NAME U_NAME,
+    PRE_TAX_TOTAL_AMOUNT PRE_TAX_AMOUNT,
+    TOTAL_DISCOUNT TOTAL_DIS,
+    POST_DISCOUNT_TOTAL_AMOUNT POST_DIS_AMOUNT,
+    TOTAL_VAT,
+    INVOICE_TOTAL_AMOUNT INV_AMOUNT,
+    INVOICE_DATE,
+    INVOICE_ID,
+GET_QR_CODE(
+    P_COMPANY_ID          => INV.COMPANY_ID,
+    P_INVOICE_DATE        => INV.INVOICE_DATE,
+    P_INV_TOTAL_WITH_VAT  => INV.INVOICE_TOTAL_AMOUNT,
+    P_VAT_TOTAL           => INV.TOTAL_VAT
+) QR_CODE
+FROM
+    SALES_INV INV JOIN SALES_CLIENT C ON INV.CLIENT_ID = C.CLIENT_ID
+    JOIN SETUP_APP_USER U ON U.USER_ID = INV.USER_ID
+;

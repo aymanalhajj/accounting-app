@@ -1,0 +1,21 @@
+REM INSERTING into ADMIN_LIST_ITEM
+SET DEFINE OFF;
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (11,7,4,'فاتورة بيع','Sales Invoice','فاتورة بيع','Sales Invoice');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (12,7,5,'فاتورة مردود بيع','Sales Return Invoice','فاتورة مردود بيع','Sales Return Invoice');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (13,7,6,'فاتورة شراء','Purchase Invoice','فاتورة شراء','Purchase Invoice');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (14,7,7,'فاتورة مردود شراء','Purchase Return Invoice','فاتورة مردود شراء','Purchase Return Invoice');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (15,7,8,'فاتورة تأجير','Rent Invoice','فاتورة تأجير','Rent Invoice');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (16,7,9,'طلب شراء','Purchase Order','طلب شراء','Purchase Order');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (17,7,10,'مخزون اول المدة','First Period Stock','مخزون اول المدة','First Period Stock');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (18,7,11,'امر صرف مخزني','Stockout Order','امر صرف مخزني','Stockout Order');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (19,7,12,'امر توريد مخزني','Stockin Order','امر توريد مخزني','Stockin Order');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (1,1,1,'مخزني','Stock','مخزني','Stock');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (2,1,2,'خدمي','Service','خدمي','Service');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (3,2,1,'نعم','Yes','نعم','Yes');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (4,2,0,'لا','No','لا','No');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (5,3,1,'فعال','Active','فعال','Active');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (6,3,0,'غير فعال','Inactive','غير فعال','Inactive');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (7,4,1,'نقد','Cash','نقد','Cash');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (8,4,2,'شبكة','Network','شبكة','Network');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (9,5,1,'نقد','Cash','نقدية','Cash');
+Insert into ADMIN_LIST_ITEM (ITEM_ID,LIST_ID,ITEM_NO,ITEM_DISPLAY_AR,ITEM_DISPLAY_EN,ITEM_NOTE_AR,ITEM_NOTE_EN) values (10,5,2,'آجل','Deferred','آجل','Deferred');
