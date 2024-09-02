@@ -86,6 +86,136 @@
 
 /
 --------------------------------------------------------
+--  DDL for Type SALES_PURCHASES_DETAILS_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASES_DETAILS_REC" AS OBJECT (
+    TRANS_TYPE_AR    VARCHAR2(500),
+    TRANS_TYPE_EN    VARCHAR2(500),
+    PRODUCT_NAME_AR  VARCHAR2(500),
+    PRODUCT_NAME_EN  VARCHAR2(500),
+    STORE_NAME_AR    VARCHAR2(500),
+    STORE_NAME_EN    VARCHAR2(500),
+    PRO_NAME_AR      VARCHAR2(500),
+    PRO_NAME_EN      VARCHAR2(500),
+    INVOICE_NO       NUMBER,
+    INVOICE_DATE     VARCHAR2(50),
+    QUANTITY         NUMBER,
+    PRICE            NUMBER,
+    VAT_VALUE        NUMBER,
+    TOTAL_AMOUNT     NUMBER
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PURCHASES_DETAILS_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASES_DETAILS_TBL" AS TABLE OF SALES_PURCHASES_DETAILS_REC;
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PURCHASE_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASE_REC" IS OBJECT (
+    C_NAME_AR      VARCHAR2(500),
+    C_NAME_EN      VARCHAR2(500),
+    TRANS_TYPE_AR     VARCHAR2(50),
+    TRANS_TYPE_EN     VARCHAR2(50),
+    INVOICE_DATE     VARCHAR2(50),
+    INVOICE_NO       NUMBER,
+    PRE_TAX_AMOUNT   NUMBER,
+    VAT_VALUE        NUMBER,
+    TOTAL_AMOUNT     NUMBER
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PURCHASE_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASE_TBL" IS table of SALES_PURCHASE_REC;
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_SUMMARY_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_SUMMARY_REC" IS OBJECT (
+    TRANS_TYPE_AR     VARCHAR2(50),
+    TRANS_TYPE_EN     VARCHAR2(50),
+    CASH_INV_SUM      NUMBER,
+    BANK_INV_SUM      NUMBER,
+    DEFERRED_INV_SUM  NUMBER,
+    PRE_TAX_INV_SUM   NUMBER,
+    VAT_SUM           NUMBER,
+    POST_TAX_INV_SUM  NUMBER,
+    CNT               NUMBER,
+    BRANCH_NAME_AR    VARCHAR2(50) NULL,
+    BRANCH_NAME_EN    VARCHAR2(50) NULL,
+    BRANCH_ID         NUMBER NULL,
+    USER_ID         NUMBER NULL,
+    USER_NAME    VARCHAR2(50) NULL
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_SUMMARY_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_SUMMARY_TBL" AS
+    TABLE OF SALES_SUMMARY_REC;
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_WITH_NET_PROFITS_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_WITH_NET_PROFITS_REC" AS OBJECT (
+    PRODUCT_NO       NUMBER,
+    PRODUCT_NAME_AR  VARCHAR2(500),
+    PRODUCT_NAME_EN  VARCHAR2(500),
+    QUANTITY         NUMBER,
+    DISCOUNT_VALUE   NUMBER,
+    VAT_VALUE        NUMBER,
+    TOTAL_AMOUNT     NUMBER,
+    PRODUCT_COST     NUMBER,
+    NET_PROFIT       NUMBER
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_WITH_NET_PROFITS_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_WITH_NET_PROFITS_TBL" AS
+    TABLE OF SALES_WITH_NET_PROFITS_REC;
+
+/
+--------------------------------------------------------
+--  DDL for Type STORES_STATISTICS_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "STORES_STATISTICS_REC" AS OBJECT (
+    PRODUCT_NO       NUMBER,
+    PRODUCT_BARCODE  NUMBER,
+    PRODUCT_NAME_AR  VARCHAR2(200),
+    PRODUCT_NAME_EN  VARCHAR2(200),
+    BAL              NUMBER,
+    COST_AVG         NUMBER,
+    COST_TOTAL       NUMBER
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type STORES_STATISTICS_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "STORES_STATISTICS_TBL" as table of STORES_STATISTICS_REC;
+
+/
+--------------------------------------------------------
 --  DDL for Type TB_REC
 --------------------------------------------------------
 
