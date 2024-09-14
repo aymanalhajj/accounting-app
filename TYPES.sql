@@ -1,4 +1,7 @@
 --------------------------------------------------------
+--  File created - السبت-سبتمبر-14-2024   
+--------------------------------------------------------
+--------------------------------------------------------
 --  DDL for Type AMOUNT_VAT_REC
 --------------------------------------------------------
 
@@ -8,6 +11,7 @@
     AMOUNT_WITH_VAT  NUMBER
 );
 
+
 /
 --------------------------------------------------------
 --  DDL for Type AMOUNT_VAT_TBL
@@ -15,21 +19,22 @@
 
   CREATE OR REPLACE EDITIONABLE TYPE "AMOUNT_VAT_TBL" AS TABLE OF AMOUNT_VAT_REC;
 
+
 /
 --------------------------------------------------------
 --  DDL for Type BAL_REC
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE TYPE "BAL_REC" AS OBJECT (
-    ACCOUNT_ID       NUMBER,
-    ACCOUNT_PARENT   NUMBER,
-    ACCOUNT_NAME_AR  NVARCHAR2(200),
-    ACCOUNT_NAME_EN  NVARCHAR2(200),
-    DEBIT_BAL        NUMBER,
-    CREDIT_BAL       NUMBER,
-    BAL              NUMBER,
-    BAL_NATURE       NUMBER
+    ACCOUNT_ID      NUMBER,
+    ACCOUNT_PARENT  NUMBER,
+    ACCOUNT_NAME    NVARCHAR2(200),
+    DEBIT_BAL       NUMBER,
+    CREDIT_BAL      NUMBER
 );
+
+
+
 
 /
 --------------------------------------------------------
@@ -37,6 +42,9 @@
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE TYPE "BAL_TABLE" AS TABLE OF BAL_REC;
+
+
+
 
 /
 --------------------------------------------------------
@@ -54,12 +62,64 @@
     PRE_DISCOUNT_VAT_VALUE     NUMBER
 );
 
+
 /
 --------------------------------------------------------
 --  DDL for Type INV_DTL_TBL
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE TYPE "INV_DTL_TBL" AS TABLE OF INV_DTL_REC;
+
+
+/
+--------------------------------------------------------
+--  DDL for Type INVOICE_TOTAL_BY_CLIENT_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "INVOICE_TOTAL_BY_CLIENT_REC" IS OBJECT (
+    INVOICE_NO    NUMBER,
+	INVOICE_DATE  VARCHAR2(50),
+	INVOICE_TYPE_AR      VARCHAR2(100) ,
+	INVOICE_TYPE_EN      VARCHAR2(100) ,
+    CLIENT_NAME_AR      VARCHAR2(100) ,
+	CLIENT_NAME_EN      VARCHAR2(100) ,
+	INVOICE_TYPE     NUMBER ,
+	PURCHASE_TOTAL    NUMBER,
+	SALES_TOTAL       NUMBER
+	
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type INVOICE_TOTAL_BY_CLIENT_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "INVOICE_TOTAL_BY_CLIENT_TBL" AS
+    TABLE OF INVOICE_TOTAL_BY_CLIENT_REC;
+
+/
+--------------------------------------------------------
+--  DDL for Type INVOICE_TOTAL_BY_TYPE_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "INVOICE_TOTAL_BY_TYPE_REC" IS OBJECT (
+    INVOICE_NO    NUMBER,
+	INVOICE_DATE  VARCHAR2(50),
+	INVOICE_TYPE_AR      VARCHAR2(100) ,
+	INVOICE_TYPE_EN      VARCHAR2(100) ,
+	INVOICE_TYPE     NUMBER ,
+	PURCHASE_TOTAL    NUMBER,
+	SALES_TOTAL       NUMBER
+	
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type INVOICE_TOTAL_BY_TYPE_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "INVOICE_TOTAL_BY_TYPE_TBL" AS
+    TABLE OF INVOICE_TOTAL_BY_TYPE_REC;
 
 /
 --------------------------------------------------------
@@ -75,12 +135,32 @@
     NOTE          NVARCHAR2(400)
 )
 
+
 /
 --------------------------------------------------------
 --  DDL for Type JOURNAL_TABLE
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE TYPE "JOURNAL_TABLE" AS TABLE OF JOURNAL_REC;
+
+
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PURCHASE_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASE_REC" IS OBJECT (
+    C_NAME_AR      VARCHAR2(500),
+    C_NAME_EN      VARCHAR2(500),
+    TRANS_TYPE_AR     VARCHAR2(50),
+    TRANS_TYPE_EN     VARCHAR2(50),
+    INVOICE_DATE     VARCHAR2(50),
+    INVOICE_NO       NUMBER,
+    PRE_TAX_AMOUNT   NUMBER,
+    VAT_VALUE        NUMBER,
+    TOTAL_AMOUNT     NUMBER
+);
 
 
 /
@@ -105,6 +185,7 @@
     TOTAL_AMOUNT     NUMBER
 );
 
+
 /
 --------------------------------------------------------
 --  DDL for Type SALES_PURCHASES_DETAILS_TBL
@@ -112,26 +193,6 @@
 
   CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASES_DETAILS_TBL" AS TABLE OF SALES_PURCHASES_DETAILS_REC;
 
-/
---------------------------------------------------------
---  DDL for Type SALES_PURCHASE_REC
---------------------------------------------------------
-
-  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASE_REC" IS OBJECT (
-    C_NAME_AR            VARCHAR2(500),
-    C_NAME_EN            VARCHAR2(500),
-    C_TAX_NO             NUMBER,
-    TRANS_TYPE_AR        VARCHAR2(50),
-    TRANS_TYPE_EN        VARCHAR2(50),
-    INVOICE_DATE         VARCHAR2(50),
-    INVOICE_NO           NUMBER,
-    PROVIDER_INV_ID      NUMBER,
-    PRE_DISCOUNT_AMOUNT  NUMBER,
-    TOTAL_DISCOUNT       NUMBER,
-    PRE_TAX_AMOUNT       NUMBER,
-    VAT_VALUE            NUMBER,
-    TOTAL_AMOUNT         NUMBER
-);
 
 /
 --------------------------------------------------------
@@ -139,6 +200,45 @@
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASE_TBL" IS table of SALES_PURCHASE_REC;
+
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PUR_RETURN_INV_SUMMARY_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PUR_RETURN_INV_SUMMARY_REC" IS OBJECT (
+    INVOICE_NO    NUMBER,
+	INVOICE_DATE  VARCHAR2(50),
+    PRE_TAX_TOTAL_AMOUNT     NUMBER,
+    TOTAL_DISCOUNT      NUMBER,
+    POST_DISCOUNT_TOTAL_AMOUNT      NUMBER,
+    TOTAL_VAT  NUMBER,
+    INVOICE_TOTAL_AMOUNT   NUMBER,
+    PROVIDER_NAME_AR          VARCHAR2(100) ,
+	PROVIDER_NAME_EN          VARCHAR2(100) ,
+	PROVIDER_TAX_NO           VARCHAR2(50) ,
+	INVOICE_TYPE_AR      VARCHAR2(100) ,
+	INVOICE_TYPE_EN      VARCHAR2(100) ,
+	INVOICE_TYPE     NUMBER ,
+    PROVIDER_ID  NUMBER,
+	PURCHASE_INV_NO     NUMBER,
+	PURCHASE_INV_DATE   VARCHAR2(50),
+    BRANCH_NAME_AR    VARCHAR2(100) ,
+    BRANCH_NAME_EN    VARCHAR2(100) ,
+    BRANCH_ID         NUMBER NULL,
+	PROVIDER_MAIN_AR  VARCHAR2(100) ,
+	PROVIDER_MAIN_EN  VARCHAR2(100) 
+	
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PUR_RETURN_INV_SUMMARY_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PUR_RETURN_INV_SUMMARY_TBL" AS
+    TABLE OF SALES_PUR_RETURN_INV_SUMMARY_REC;
 
 /
 --------------------------------------------------------
@@ -162,6 +262,7 @@
     USER_NAME    VARCHAR2(50) NULL
 );
 
+
 /
 --------------------------------------------------------
 --  DDL for Type SALES_SUMMARY_TBL
@@ -169,6 +270,7 @@
 
   CREATE OR REPLACE EDITIONABLE TYPE "SALES_SUMMARY_TBL" AS
     TABLE OF SALES_SUMMARY_REC;
+
 
 /
 --------------------------------------------------------
@@ -187,6 +289,7 @@
     NET_PROFIT       NUMBER
 );
 
+
 /
 --------------------------------------------------------
 --  DDL for Type SALES_WITH_NET_PROFITS_TBL
@@ -194,6 +297,7 @@
 
   CREATE OR REPLACE EDITIONABLE TYPE "SALES_WITH_NET_PROFITS_TBL" AS
     TABLE OF SALES_WITH_NET_PROFITS_REC;
+
 
 /
 --------------------------------------------------------
@@ -210,6 +314,7 @@
     COST_TOTAL       NUMBER
 );
 
+
 /
 --------------------------------------------------------
 --  DDL for Type STORES_STATISTICS_TBL
@@ -217,30 +322,6 @@
 
   CREATE OR REPLACE EDITIONABLE TYPE "STORES_STATISTICS_TBL" as table of STORES_STATISTICS_REC;
 
-/
---------------------------------------------------------
---  DDL for Type TAX_RETURN_REC
---------------------------------------------------------
-
-  CREATE OR REPLACE EDITIONABLE TYPE "TAX_RETURN_REC" AS OBJECT (
-    AMOUNT_OF_SALES_UNDER_VAT            NUMBER,
-    VAT_OF_SALES_UNDER_VAT               NUMBER,
-    AMOUNT_OF_SALES_WITH_ZERO_VAT        NUMBER,
-    AMOUNT_OF_SALES_WITH_VAT_EXEMPT      NUMBER,
-    AMOUNT_OF_PURCHASES_UNDER_VAT        NUMBER,
-    VAT_OF_PURCHASES_UNDER_VAT           NUMBER,
-    AMOUNT_OF_PURCHASES_WITH_ZERO_VAT    NUMBER,
-    AMOUNT_OF_PURCHASES_WITH_VAT_EXEMPT  NUMBER,
-    OPERATIONAL_EXPENSES                 NUMBER,
-    OPERATIONAL_EXPENSES_VAT             NUMBER
-);
-
-/
---------------------------------------------------------
---  DDL for Type TAX_RETURN_TBL
---------------------------------------------------------
-
-  CREATE OR REPLACE EDITIONABLE TYPE "TAX_RETURN_TBL" AS TABLE OF TAX_RETURN_REC;
 
 /
 --------------------------------------------------------
@@ -250,8 +331,7 @@
   CREATE OR REPLACE EDITIONABLE TYPE "TB_REC" AS OBJECT (
 ACCOUNT_ID NUMBER,
 ACCOUNT_PARENT NUMBER,
-    ACCOUNT_NAME_AR    NVARCHAR2(200),
-    ACCOUNT_NAME_EN    NVARCHAR2(200),
+account_name NVARCHAR2(200),
  PRE_DEBIT NUMBER,
  PRE_CREDIT NUMBER,
  IN_DEBIT NUMBER,
@@ -261,11 +341,17 @@ ACCOUNT_PARENT NUMBER,
 
 );
 
+
+
+
 /
 --------------------------------------------------------
 --  DDL for Type TB_TABLE
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE TYPE "TB_TABLE" AS TABLE OF TB_REC;
+
+
+
 
 /
