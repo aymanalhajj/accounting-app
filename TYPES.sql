@@ -1,5 +1,5 @@
 --------------------------------------------------------
---  File created - السبت-سبتمبر-14-2024   
+--  File created - الاثنين-سبتمبر-16-2024   
 --------------------------------------------------------
 --------------------------------------------------------
 --  DDL for Type AMOUNT_VAT_REC
@@ -147,6 +147,30 @@
 
 /
 --------------------------------------------------------
+--  DDL for Type PURCHASES_PRODUCT_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "PURCHASES_PRODUCT_REC" IS OBJECT (
+    PRODUCT_ID           NUMBER,
+	PRODUCT_NO           NUMBER,
+	PRODUCT_NAME_AR      VARCHAR2(100) ,
+	PRODUCT_NAME_EN      VARCHAR2(100) ,
+	BARCODE              VARCHAR2(50) ,
+	PURCHASE_QUANTITY_TOTAL       NUMBER,
+	PURCHASE_AMOUNT_TOTAL              NUMBER
+	
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type PURCHASES_PRODUCT_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "PURCHASES_PRODUCT_TBL" AS
+    TABLE OF PURCHASES_PRODUCT_REC;
+
+/
+--------------------------------------------------------
 --  DDL for Type SALES_PURCHASE_REC
 --------------------------------------------------------
 
@@ -193,6 +217,32 @@
 
   CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASES_DETAILS_TBL" AS TABLE OF SALES_PURCHASES_DETAILS_REC;
 
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PURCHASES_PRODUCT_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASES_PRODUCT_REC" IS OBJECT (
+    PRODUCT_ID           NUMBER,
+	PRODUCT_NO           NUMBER,
+	PRODUCT_NAME_AR      VARCHAR2(100) ,
+	PRODUCT_NAME_EN      VARCHAR2(100) ,
+	BARCODE              VARCHAR2(50) ,
+	PURCHASE_QUANTITY_TOTAL       NUMBER,
+	PURCHASE_AMOUNT_TOTAL              NUMBER,
+	SALES_QUANTITY_TOTAL              NUMBER,
+	SALES_AMOUNT_TOTAL              NUMBER
+	
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PURCHASES_PRODUCT_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASES_PRODUCT_TBL" AS
+    TABLE OF SALES_PURCHASES_PRODUCT_REC;
 
 /
 --------------------------------------------------------
