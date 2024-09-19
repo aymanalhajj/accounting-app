@@ -155,6 +155,12 @@
   CREATE UNIQUE INDEX "SALES_PRODUCT_BARCODES_PK" ON "SALES_PRODUCT_BARCODES" ("PRODUCT_BARCODE_ID") 
   ;
 --------------------------------------------------------
+--  DDL for Index SALES_PRODUCT_INDEX1
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "SALES_PRODUCT_INDEX1" ON "SALES_PRODUCT" ("PRODUCT_NO", "COMPANY_ID") 
+  ;
+--------------------------------------------------------
 --  DDL for Index SALES_PRODUCT_PK
 --------------------------------------------------------
 
@@ -501,6 +507,12 @@
 --------------------------------------------------------
 
   CREATE UNIQUE INDEX "SALES_PRODUCT_PK" ON "SALES_PRODUCT" ("PRODUCT_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index SALES_PRODUCT_INDEX1
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "SALES_PRODUCT_INDEX1" ON "SALES_PRODUCT" ("PRODUCT_NO", "COMPANY_ID") 
   ;
 --------------------------------------------------------
 --  DDL for Index SALES_PRODUCT_BARCODES_PK

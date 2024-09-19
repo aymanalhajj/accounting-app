@@ -1,3 +1,0 @@
-REM INSERTING into SALES_CLIENT
-SET DEFINE OFF;
-Insert into SALES_CLIENT (CLIENT_ID,NAME_AR,NAME_EN,MOBILE_NO,COMPANY_ID,TEL_NO,FAX,EMAIL,TAX_NO,COUNTRY_ID,CITY_ID,REGION_ID,BUILDING_NO,SREET,POST_CODE,NOTE,STATUS,ACCOUNT_ID) values (1,'مسرة طيبة','Masarat Tibah',null,0,null,null,null,null,null,null,null,null,null,null,null,null,null);

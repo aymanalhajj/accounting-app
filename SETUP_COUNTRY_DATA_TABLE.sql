@@ -1,4 +1,0 @@
-REM INSERTING into SETUP_COUNTRY
-SET DEFINE OFF;
-Insert into SETUP_COUNTRY (COUNTRY_ID,NAME_AR,NAME_EN,NATIONALITY_NAME_AR,NATIONALITY_NAME_EN,STATUS,COMPANY_ID) values (2,'الكويت','Kuwait','كويتي','Kuwaiti',null,1);
-Insert into SETUP_COUNTRY (COUNTRY_ID,NAME_AR,NAME_EN,NATIONALITY_NAME_AR,NATIONALITY_NAME_EN,STATUS,COMPANY_ID) values (1,'المملكة العربية السعودية','United Kindom of Saudia','سعودي','Saudi',null,0);

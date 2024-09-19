@@ -61,6 +61,11 @@
   ALTER TABLE "ACC_VOUCHER_DTL" ADD CONSTRAINT "ACC_VOUCHER_DTL_PK" PRIMARY KEY ("ACC_VOUCHER_DTL_ID")
   USING INDEX "ACC_JOURNAL_DTL_PK"  ENABLE;
 --------------------------------------------------------
+--  Constraints for Table ACC_YEAR
+--------------------------------------------------------
+
+  ALTER TABLE "ACC_YEAR" MODIFY ("YEAR_ID" NOT NULL ENABLE);
+--------------------------------------------------------
 --  Constraints for Table ACL_APP_INTERFACE
 --------------------------------------------------------
 
