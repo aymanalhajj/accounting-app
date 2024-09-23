@@ -1,5 +1,5 @@
 --------------------------------------------------------
---  File created - السبت-سبتمبر-21-2024   
+--  File created - الاثنين-سبتمبر-23-2024   
 --------------------------------------------------------
 --------------------------------------------------------
 --  DDL for Type AMOUNT_VAT_REC
@@ -143,6 +143,39 @@
   CREATE OR REPLACE EDITIONABLE TYPE "JOURNAL_TABLE" AS TABLE OF JOURNAL_REC;
 
 
+
+/
+--------------------------------------------------------
+--  DDL for Type PRODUCT_MOVEMENTS_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "PRODUCT_MOVEMENTS_REC" AS OBJECT (
+    PRODUCT_NO       NUMBER,
+    PRODUCT_BARCODE  NUMBER,
+    PRODUCT_NAME_AR  VARCHAR2(200),
+    PRODUCT_NAME_EN  VARCHAR2(200),
+	MAIN_PRODUCT_NAME_AR    VARCHAR2(200),
+    MAIN_PRODUCT_NAME_EN    VARCHAR2(200),
+    BAL              NUMBER,
+    COST_AVG         NUMBER,
+    COST_TOTAL       NUMBER,
+	FIRST_PERIOD     NUMBER,
+	PURCHASE     NUMBER,
+	PUR_RETURN     NUMBER,
+	SALES     NUMBER,
+	SALES_RETURN     NUMBER,
+	STOCKIN     NUMBER,
+	STOCKOUT     NUMBER,
+	ADJUSTMENT  NUMBER
+);
+
+/
+--------------------------------------------------------
+--  DDL for Type PRODUCT_MOVEMENTS_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "PRODUCT_MOVEMENTS_TBL" AS
+    TABLE OF PRODUCT_MOVEMENTS_REC;
 
 /
 --------------------------------------------------------
@@ -442,11 +475,12 @@
     PRODUCT_BARCODE  NUMBER,
     PRODUCT_NAME_AR  VARCHAR2(200),
     PRODUCT_NAME_EN  VARCHAR2(200),
+	STORE_NAME_AR  VARCHAR2(200),
+    STORE_NAME_EN  VARCHAR2(200),
     BAL              NUMBER,
     COST_AVG         NUMBER,
     COST_TOTAL       NUMBER
 );
-
 
 /
 --------------------------------------------------------
@@ -454,7 +488,6 @@
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE TYPE "STORES_STATISTICS_TBL" as table of STORES_STATISTICS_REC;
-
 
 /
 --------------------------------------------------------
