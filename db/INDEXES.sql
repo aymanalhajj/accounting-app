@@ -83,6 +83,12 @@
   CREATE UNIQUE INDEX "ADMIN_LIST_PK" ON "ADMIN_LIST" ("LIST_ID") 
   ;
 --------------------------------------------------------
+--  DDL for Index ADMIN_USER_SESSION_PK
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "ADMIN_USER_SESSION_PK" ON "ADMIN_USER_SESSION" ("SESSION_ID") 
+  ;
+--------------------------------------------------------
 --  DDL for Index CURRENCY_ID_PK
 --------------------------------------------------------
 
@@ -483,6 +489,12 @@
 --------------------------------------------------------
 
   CREATE UNIQUE INDEX "ADMIN_LIST_ITEM_PK" ON "ADMIN_LIST_ITEM" ("ITEM_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index ADMIN_USER_SESSION_PK
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "ADMIN_USER_SESSION_PK" ON "ADMIN_USER_SESSION" ("SESSION_ID") 
   ;
 --------------------------------------------------------
 --  DDL for Index SALES_CLIENT_PK

@@ -163,6 +163,18 @@
 
   ALTER TABLE "ADMIN_PWD_HMAC_KEY" MODIFY ("COMPANY_ID" NOT NULL ENABLE);
 --------------------------------------------------------
+--  Constraints for Table ADMIN_USER_SESSION
+--------------------------------------------------------
+
+  ALTER TABLE "ADMIN_USER_SESSION" MODIFY ("SESSION_ID" NOT NULL ENABLE);
+  ALTER TABLE "ADMIN_USER_SESSION" ADD CONSTRAINT "ADMIN_USER_SESSION_PK" PRIMARY KEY ("SESSION_ID")
+  USING INDEX  ENABLE;
+--------------------------------------------------------
+--  Constraints for Table API_LOG
+--------------------------------------------------------
+
+  ALTER TABLE "API_LOG" MODIFY ("LOG_ID" NOT NULL ENABLE);
+--------------------------------------------------------
 --  Constraints for Table SALES_CLIENT
 --------------------------------------------------------
 
