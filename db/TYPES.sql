@@ -1,5 +1,5 @@
 --------------------------------------------------------
---  File created - الاثنين-سبتمبر-23-2024   
+--  File created - الثلاثاء-أكتوبر-08-2024   
 --------------------------------------------------------
 --------------------------------------------------------
 --  DDL for Type AMOUNT_VAT_REC
@@ -22,6 +22,32 @@
 
 /
 --------------------------------------------------------
+--  DDL for Type BAL_BANK_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "BAL_BANK_REC" AS OBJECT (
+			ACCOUNT_ID          NUMBER,
+			ACCOUNT_NAME_AR    NVARCHAR2(200),
+			ACCOUNT_NAME_EN    NVARCHAR2(200),
+			MAIN_BANK_NAME_AR  NVARCHAR2(200),
+			MAIN_BANK_NAME_EN  NVARCHAR2(200),
+			BANK_NAME_AR       NVARCHAR2(200),
+			BANK_NAME_EN       NVARCHAR2(200),
+			DEBIT_BAL        NUMBER,
+			CREDIT_BAL       NUMBER,
+			BAL              NUMBER,
+			BAL_NATURE       NUMBER
+       );
+
+/
+--------------------------------------------------------
+--  DDL for Type BAL_BANK_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "BAL_BANK_TBL" AS TABLE OF BAL_BANK_REC;
+
+/
+--------------------------------------------------------
 --  DDL for Type BAL_REC
 --------------------------------------------------------
 
@@ -36,6 +62,32 @@
     BAL_NATURE       NUMBER
 );
 
+
+/
+--------------------------------------------------------
+--  DDL for Type BAL_SAFE_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "BAL_SAFE_REC" AS OBJECT (
+			ACCOUNT_ID          NUMBER,
+			ACCOUNT_NAME_AR    NVARCHAR2(200),
+			ACCOUNT_NAME_EN    NVARCHAR2(200),
+			MAIN_SAFE_NAME_AR  NVARCHAR2(200),
+			MAIN_SAFE_NAME_EN  NVARCHAR2(200),
+			SAFE_NAME_AR       NVARCHAR2(200),
+			SAFE_NAME_EN       NVARCHAR2(200),
+			DEBIT_BAL        NUMBER,
+			CREDIT_BAL       NUMBER,
+			BAL              NUMBER,
+			BAL_NATURE       NUMBER
+       );
+
+/
+--------------------------------------------------------
+--  DDL for Type BAL_SAFE_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "BAL_SAFE_TBL" AS TABLE OF BAL_SAFE_REC;
 
 /
 --------------------------------------------------------
