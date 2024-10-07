@@ -1,5 +1,5 @@
 --------------------------------------------------------
---  File created - الاثنين-سبتمبر-23-2024   
+--  File created - الثلاثاء-أكتوبر-08-2024   
 --------------------------------------------------------
 --------------------------------------------------------
 --  DDL for Function ACC_BALS
@@ -115,6 +115,206 @@ BEGIN
     RETURN V_BAL_TABLE;
 END ACC_BALS;
 
+
+/
+--------------------------------------------------------
+--  DDL for Function ACC_BALS_BANK
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "ACC_BALS_BANK" (
+    P_COMPANY_ID   NUMBER,
+    P_FROM_DATE       NVARCHAR2,
+    P_TO_DATE         NVARCHAR2,
+    P_BANK_ID  NUMBER DEFAULT 0
+) RETURN BAL_BANK_TBL AS 
+ V_BAL_BANK_REC BAL_BANK_REC := BAL_BANK_REC(
+        ACCOUNT_ID          => NULL,
+        ACCOUNT_NAME_AR     => NULL,
+        ACCOUNT_NAME_EN     => NULL,
+		MAIN_BANK_NAME_AR   => NULL,
+		MAIN_BANK_NAME_EN   => NULL,
+        BANK_NAME_AR        => NULL,
+		BANK_NAME_EN        => NULL,
+		DEBIT_BAL           => NULL,
+        CREDIT_BAL          => NULL,
+        BAL                 => NULL,
+        BAL_NATURE          => NULL
+    );
+	V_MAIN_BANK_NAME_AR NVARCHAR2(200);
+	V_MAIN_BANK_NAME_EN NVARCHAR2(200);
+    V_BAL_BANK_TBL BAL_BANK_TBL:= BAL_BANK_TBL();
+    V_INDEX NUMBER:= 0;
+    V_INDEX_TEMP NUMBER:= 0;
+    V_LEVEL_NO NUMBER:= 5;
+BEGIN
+
+IF P_BANK_ID= 0 THEN 
+  V_MAIN_BANK_NAME_AR   :='الكل';
+  V_MAIN_BANK_NAME_EN    :='All';
+  else  
+    select 
+	  ACC_NAME_AR,
+	  ACC_NAME_EN
+	 into 
+	  V_MAIN_BANK_NAME_AR,
+	  V_MAIN_BANK_NAME_EN
+	 from SETUP_BANK_EXT_ACC
+	 where COMPANY_ID=P_COMPANY_ID
+	 and BANK_ACC_ID=P_BANK_ID;
+
+  end if;
+    FOR REC IN (
+        WITH in_period as (
+        select 
+        ACCOUNT_ID,
+        SUM(nvl(DEBIT,0)) DEBIT_BAL,
+        SUM(nvl(CREDIT,0)) CREDIT_BAL,
+        DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0)),SUM(NVL(L.CREDIT,0)) -SUM(NVL(L.DEBIT,0))) BAL,
+		DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,1,-1,2,NULL) BAL_NATURE
+         from acc_ledger l
+         WHERE l.COMPANY_ID = P_COMPANY_ID AND  JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
+         GROUP BY ACCOUNT_ID
+        )
+        select 
+            ACC.ACCOUNT_ID,
+            account_name_ar,
+            ACCOUNT_NAME_EN,
+			ACC_NAME_AR,
+			ACC_NAME_EN,
+            ACCOUNT_PARENT,
+            NVL(DEBIT_BAL,0) DEBIT_BAL,
+            NVL(CREDIT_BAL,0) CREDIT_BAL,
+            NVL(BAL,0) BAL,
+            NVL(BAL_NATURE,ACC.ACCOUNT_NATURE) BAL_NATURE
+        from acc_accounts acc full outer JOIN in_period ON 
+        acc.ACCOUNT_ID = in_period.ACCOUNT_ID
+		JOIN SETUP_BANK_EXT_ACC SA ON SA.ACCOUNT_ID=ACC.ACCOUNT_ID
+        WHERE SA.COMPANY_ID = P_COMPANY_ID AND (SA.BANK_ACC_ID =P_BANK_ID OR P_BANK_ID=0)
+        order by acc.ACCOUNT_ID
+    )
+    LOOP
+
+            V_BAL_BANK_REC.ACCOUNT_ID        := REC.ACCOUNT_ID;
+            V_BAL_BANK_REC.ACCOUNT_NAME_AR     := REC.ACCOUNT_NAME_AR;
+            V_BAL_BANK_REC.ACCOUNT_NAME_EN     := REC.ACCOUNT_NAME_EN;
+            V_BAL_BANK_REC.MAIN_BANK_NAME_AR   := V_MAIN_BANK_NAME_AR;
+            V_BAL_BANK_REC.MAIN_BANK_NAME_EN   := V_MAIN_BANK_NAME_EN;
+            V_BAL_BANK_REC.BANK_NAME_AR        := REC.ACC_NAME_AR;
+            V_BAL_BANK_REC.BANK_NAME_EN        := REC.ACC_NAME_EN;
+			V_BAL_BANK_REC.DEBIT_BAL           := REC.DEBIT_BAL;
+			V_BAL_BANK_REC.CREDIT_BAL          := REC.CREDIT_BAL;
+			V_BAL_BANK_REC.BAL                 := REC.BAL;
+			V_BAL_BANK_REC.BAL_NATURE          := REC.BAL_NATURE;
+
+
+        V_BAL_BANK_TBL.EXTEND;
+        V_INDEX := V_INDEX+1;
+        V_BAL_BANK_TBL(V_INDEX) := V_BAL_BANK_REC;
+
+ END LOOP;
+
+    RETURN V_BAL_BANK_TBL;
+END ACC_BALS_BANK;
+
+/
+--------------------------------------------------------
+--  DDL for Function ACC_BALS_SAFE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "ACC_BALS_SAFE" (
+    P_COMPANY_ID   NUMBER,
+    P_FROM_DATE       NVARCHAR2,
+    P_TO_DATE         NVARCHAR2,
+    P_SAFE_ID  NUMBER DEFAULT 0
+) RETURN BAL_SAFE_TBL AS 
+ V_BAL_SAFE_REC BAL_SAFE_REC := BAL_SAFE_REC(
+        ACCOUNT_ID          => NULL,
+        ACCOUNT_NAME_AR     => NULL,
+        ACCOUNT_NAME_EN     => NULL,
+		MAIN_SAFE_NAME_AR   => NULL,
+		MAIN_SAFE_NAME_EN   => NULL,
+        SAFE_NAME_AR        => NULL,
+		SAFE_NAME_EN        => NULL,
+		DEBIT_BAL           => NULL,
+        CREDIT_BAL          => NULL,
+        BAL                 => NULL,
+        BAL_NATURE          => NULL
+    );
+	V_MAIN_SAFE_NAME_AR NVARCHAR2(200);
+	V_MAIN_SAFE_NAME_EN NVARCHAR2(200);
+    V_BAL_SAFE_TBL BAL_SAFE_TBL:= BAL_SAFE_TBL();
+    V_INDEX NUMBER:= 0;
+    V_INDEX_TEMP NUMBER:= 0;
+    V_LEVEL_NO NUMBER:= 5;
+BEGIN
+
+IF P_SAFE_ID= 0 THEN 
+  V_MAIN_SAFE_NAME_AR   :='الكل';
+  V_MAIN_SAFE_NAME_EN    :='All';
+  else  
+    select 
+	  SAFE_NAME_AR,
+	  SAFE_NAME_EN
+	 into 
+	  V_MAIN_SAFE_NAME_AR,
+	  V_MAIN_SAFE_NAME_EN
+	 from SETUP_SAFE
+	 where COMPANY_ID=P_COMPANY_ID
+	 and SAFE_ID=P_SAFE_ID;
+
+  end if;
+    FOR REC IN (
+        WITH in_period as (
+        select 
+        ACCOUNT_ID,
+        SUM(nvl(DEBIT,0)) DEBIT_BAL,
+        SUM(nvl(CREDIT,0)) CREDIT_BAL,
+        DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0)),SUM(NVL(L.CREDIT,0)) -SUM(NVL(L.DEBIT,0))) BAL,
+		DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,1,-1,2,NULL) BAL_NATURE
+         from acc_ledger l
+         WHERE l.COMPANY_ID = P_COMPANY_ID AND  JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
+         GROUP BY ACCOUNT_ID
+        )
+        select 
+            ACC.ACCOUNT_ID,
+            account_name_ar,
+            ACCOUNT_NAME_EN,
+			SAFE_NAME_AR,
+			SAFE_NAME_EN,
+            ACCOUNT_PARENT,
+            NVL(DEBIT_BAL,0) DEBIT_BAL,
+            NVL(CREDIT_BAL,0) CREDIT_BAL,
+            NVL(BAL,0) BAL,
+            NVL(BAL_NATURE,ACC.ACCOUNT_NATURE) BAL_NATURE
+        from acc_accounts acc full outer JOIN in_period ON 
+        acc.ACCOUNT_ID = in_period.ACCOUNT_ID
+		JOIN SETUP_SAFE SA ON SA.ACCOUNT_ID=ACC.ACCOUNT_ID
+        WHERE SA.COMPANY_ID = P_COMPANY_ID AND (SA.SAFE_ID =P_SAFE_ID OR P_SAFE_ID=0)
+        order by acc.ACCOUNT_ID
+    )
+    LOOP
+
+            V_BAL_SAFE_REC.ACCOUNT_ID          := REC.ACCOUNT_ID;
+            V_BAL_SAFE_REC.ACCOUNT_NAME_AR     := REC.ACCOUNT_NAME_AR;
+            V_BAL_SAFE_REC.ACCOUNT_NAME_EN     := REC.ACCOUNT_NAME_EN;
+            V_BAL_SAFE_REC.MAIN_SAFE_NAME_AR   := V_MAIN_SAFE_NAME_AR;
+            V_BAL_SAFE_REC.MAIN_SAFE_NAME_EN   := V_MAIN_SAFE_NAME_EN;
+            V_BAL_SAFE_REC.SAFE_NAME_AR        := REC.SAFE_NAME_AR;
+            V_BAL_SAFE_REC.SAFE_NAME_EN        := REC.SAFE_NAME_EN;
+			V_BAL_SAFE_REC.DEBIT_BAL       := REC.DEBIT_BAL;
+			V_BAL_SAFE_REC.CREDIT_BAL        := REC.CREDIT_BAL;
+			V_BAL_SAFE_REC.BAL        := REC.BAL;
+			V_BAL_SAFE_REC.BAL_NATURE        := REC.BAL_NATURE;
+
+
+        V_BAL_SAFE_TBL.EXTEND;
+        V_INDEX := V_INDEX+1;
+        V_BAL_SAFE_TBL(V_INDEX) := V_BAL_SAFE_REC;
+
+ END LOOP;
+
+    RETURN V_BAL_SAFE_TBL;
+END ACC_BALS_SAFE;
 
 /
 --------------------------------------------------------
@@ -416,7 +616,12 @@ END;
 --  DDL for Function INCOME_STATEMENT
 --------------------------------------------------------
 
-  CREATE OR REPLACE EDITIONABLE FUNCTION "INCOME_STATEMENT" (P_TO_DATE NVARCHAR2) RETURN BAL_TABLE AS 
+  CREATE OR REPLACE EDITIONABLE FUNCTION "INCOME_STATEMENT" (
+    P_COMPANY_ID   NUMBER,
+    P_TO_DATE NVARCHAR2 ,
+    P_FOR_MAIN_ACCS  NUMBER DEFAULT 0,
+    P_COST_CNTR_ID   NUMBER DEFAULT 0
+    )RETURN BAL_TABLE AS 
 
     V_BAL_REC BAL_REC;
     V_BAL_TABLE BAL_TABLE := BAL_TABLE();
@@ -433,7 +638,7 @@ BEGIN
         SUM(nvl(DEBIT,0)) DEBIT_BAL,
         SUM(nvl(CREDIT,0)) CREDIT_BAL
         from acc_ledger
-        WHERE JOURNAL_DATE < to_date(P_TO_DATE)
+        WHERE COMPANY_ID = P_COMPANY_ID AND (COST_CNTR_ID=P_COST_CNTR_ID or P_COST_CNTR_ID=0)and JOURNAL_DATE < TO_DATE(P_TO_DATE,'DD-MM-YYYY')
         GROUP BY ACCOUNT_ID
         )
         select 
@@ -445,7 +650,7 @@ BEGIN
         nvl(CREDIT_BAL,0) CREDIT_BAL
         from GL full outer join   acc_accounts acc
         on acc.ACCOUNT_ID = GL.ACCOUNT_ID
-        where ACC.SUB_ACCOUNT = 1 AND ACC.ACCOUNT_TYPE = 2
+        where ACC.COMPANY_ID = P_COMPANY_ID AND ACC.SUB_ACCOUNT = 1 AND ACC.ACCOUNT_TYPE = 2
         order by acc.ACCOUNT_ID
     )
     LOOP
@@ -463,7 +668,7 @@ BEGIN
         );
     END LOOP;
     V_BAL_TABLE_PERENT := V_BAL_TABLE;
-    WHILE V_LEVEL_NO > 0 LOOP
+    WHILE NVL(P_FOR_MAIN_ACCS,0) = 1 AND V_LEVEL_NO > 0 LOOP
 
         V_INDEX_TEMP := 0;
         FOR REC IN (
@@ -484,6 +689,7 @@ BEGIN
             group by ACCOUNT_PARENT) BAL 
             JOIN ACC_ACCOUNTS ACC
             ON BAL.ACCOUNT_ID  = ACC.ACCOUNT_ID
+            WHERE acc.COMPANY_ID = P_COMPANY_ID
         )LOOP
             V_BAL_REC := BAL_REC(
                 ACCOUNT_ID      => REC.ACCOUNT_ID,
@@ -512,7 +718,6 @@ BEGIN
 
     RETURN V_BAL_TABLE;
 END INCOME_STATEMENT;
-
 
 /
 --------------------------------------------------------
@@ -2877,9 +3082,11 @@ END TAX_RETURN_R;
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "TRAIL_BALANCE" (
+    P_COMPANY_ID   NUMBER,
     P_FROM_DATE       NVARCHAR2,
     P_TO_DATE         NVARCHAR2,
-    P_WITH_MAIN_ACCS  NUMBER DEFAULT 0
+    P_WITH_MAIN_ACCS  NUMBER DEFAULT 0,
+    P_COST_CNTR_ID   NUMBER DEFAULT 0
 ) RETURN TB_TABLE AS 
 
     V_TB_REC TB_REC;
@@ -2897,7 +3104,7 @@ BEGIN
         SUM(nvl(DEBIT,0)) PRE_DEBIT,
         SUM(nvl(CREDIT,0)) PRE_CREDIT
         from acc_ledger
-        WHERE JOURNAL_DATE < TO_DATE(P_FROM_DATE,'DD-MM-YYYY')
+        WHERE COMPANY_ID = P_COMPANY_ID and (COST_CNTR_ID=P_COST_CNTR_ID or P_COST_CNTR_ID=0)and JOURNAL_DATE < TO_DATE(P_FROM_DATE,'DD-MM-YYYY')
         GROUP BY ACCOUNT_ID
         ),
         in_period as (
@@ -2906,7 +3113,7 @@ BEGIN
         SUM(nvl(DEBIT,0)) IN_DEBIT,
         SUM(nvl(CREDIT,0)) IN_CREDIT
          from acc_ledger
-         WHERE JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
+         WHERE COMPANY_ID = P_COMPANY_ID and (COST_CNTR_ID=P_COST_CNTR_ID or P_COST_CNTR_ID=0) and JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
          GROUP BY ACCOUNT_ID
         )
         select 
@@ -2925,6 +3132,7 @@ BEGIN
         full outer JOIN in_period ON 
         acc.ACCOUNT_ID = in_period.ACCOUNT_ID
         where ACC.SUB_ACCOUNT = 1
+        and acc.COMPANY_ID = P_COMPANY_ID
         order by acc.ACCOUNT_ID
     )
     LOOP
@@ -2973,6 +3181,7 @@ BEGIN
             group by ACCOUNT_PARENT) TB 
             JOIN ACC_ACCOUNTS ACC
             ON TB.ACCOUNT_ID  = ACC.ACCOUNT_ID
+            
         )LOOP
             V_TB_REC := TB_REC(
                 ACCOUNT_ID => REC.ACCOUNT_ID,
@@ -3003,6 +3212,5 @@ BEGIN
 
     RETURN V_TB_TABLE;
 END TRAIL_BALANCE;
-
 
 /
