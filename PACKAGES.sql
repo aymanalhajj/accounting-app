@@ -1,4 +1,7 @@
 --------------------------------------------------------
+--  File created - الجمعة-أكتوبر-11-2024   
+--------------------------------------------------------
+--------------------------------------------------------
 --  DDL for Package ACC_ACCOUNTS_TAPI
 --------------------------------------------------------
 
@@ -26,6 +29,27 @@
     );
 
 END ACC_ACCOUNTS_TAPI;
+
+
+/
+--------------------------------------------------------
+--  DDL for Package ACC_ACCOUNTS_XAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE "ACC_ACCOUNTS_XAPI" IS
+   FUNCTION GET_ACCOUNT_NO(
+      P_COMPANY_ID   IN NUMBER,
+      P_PARENT_ID  IN NUMBER
+       )RETURN NUMBER;
+
+ PROCEDURE ADD_CLIENT_ACCOUNT(
+     P_CLIENT_ID  NUMBER
+   );
+
+ PROCEDURE ADD_PROVIDER_ACCOUNT(
+     P_PROVIDER_ID  NUMBER
+   );
+END ACC_ACCOUNTS_XAPI;
 
 /
 --------------------------------------------------------
@@ -61,6 +85,7 @@ END ACC_ACCOUNTS_TAPI;
 
 END ACC_JOURNAL_DTL_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package ACC_JOURNAL_TAPI
@@ -95,6 +120,7 @@ END ACC_JOURNAL_DTL_TAPI;
 
 END ACC_JOURNAL_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package ACC_LEDGER_TAPI
@@ -115,6 +141,7 @@ END ACC_JOURNAL_TAPI;
     );
 
 END ACC_LEDGER_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -158,6 +185,7 @@ END ACC_LEDGER_TAPI;
     );
 
 END ACC_VOUCHER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -208,6 +236,7 @@ END ACC_VOUCHER_DTL_TAPI;
     );
 
 END ACC_VOUCHER_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -266,6 +295,7 @@ END ACC_VOUCHER_TAPI;
 
 end ADMIN_COMPANY_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package AUTH
@@ -298,6 +328,7 @@ end ADMIN_COMPANY_TAPI;
 
 END AUTH;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package COMPUTE
@@ -320,6 +351,7 @@ END AUTH;
     ) RETURN AMOUNT_VAT_TBL;
 
 END COMPUTE;
+
 
 /
 --------------------------------------------------------
@@ -502,6 +534,7 @@ END COMPUTE;
 
 END;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package FILE_UTILE
@@ -520,6 +553,7 @@ END;
     );
 
 END FILE_UTILE;
+
 
 /
 --------------------------------------------------------
@@ -556,6 +590,7 @@ END FILE_UTILE;
     );
 
 END INV_JOURNAL;
+
 
 /
 --------------------------------------------------------
@@ -601,6 +636,7 @@ END INV_JOURNAL;
 
 END MAKE_NO;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package MAKE_NOTE
@@ -624,6 +660,7 @@ END MAKE_NO;
 
 END MAKE_NOTE;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package PWD_SECURITY
@@ -632,17 +669,18 @@ END MAKE_NOTE;
   CREATE OR REPLACE EDITIONABLE PACKAGE "PWD_SECURITY" 
 AUTHID DEFINER 
 AS
-   --توليد HASH لكلمة المرور
+   --طھظˆظ„ظٹط¯ HASH ظ„ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±
    FUNCTION GET_PWD_HMAC(P_PWD_PLN   NVARCHAR2)
         RETURN RAW;
 
-   --التحقق من سلامة كلمة المرور
+   --ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† ط³ظ„ط§ظ…ط© ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±
    FUNCTION VRFY_PWD_HMAC(
                P_PWD_PLN     NVARCHAR2,
                P_PWD_HMAC    RAW
                )RETURN NUMBER;
 
 END PWD_SECURITY;
+
 
 /
 --------------------------------------------------------
@@ -708,6 +746,7 @@ END PWD_SECURITY;
     );
 
 end SALES_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -811,6 +850,7 @@ end SALES_INV_DTL_TAPI;
 
 END SALES_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package SALES_PRODUCT_FILES_TAPI
@@ -841,6 +881,7 @@ END SALES_INV_TAPI;
     );
 
 END SALES_PRODUCT_FILES_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -885,6 +926,7 @@ END SALES_PRODUCT_FILES_TAPI;
     );
 
 END SALES_PURCHASE_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -960,6 +1002,7 @@ END SALES_PURCHASE_INV_DTL_TAPI;
 
 END SALES_PURCHASE_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package SALES_PURCHASE_ORDER_DTL_TAPI
@@ -1003,6 +1046,7 @@ END SALES_PURCHASE_INV_TAPI;
     );
 
 END SALES_PURCHASE_ORDER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -1077,6 +1121,7 @@ END SALES_PURCHASE_ORDER_DTL_TAPI;
 
 END SALES_PURCHASE_ORDER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package SALES_PUR_RETURN_INV_DTL_TAPI
@@ -1120,6 +1165,7 @@ END SALES_PURCHASE_ORDER_TAPI;
     );
 
 END SALES_PUR_RETURN_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -1195,6 +1241,7 @@ END SALES_PUR_RETURN_INV_DTL_TAPI;
 
 END SALES_PUR_RETURN_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package SALES_RENT_INV_DTL_TAPI
@@ -1239,6 +1286,7 @@ END SALES_PUR_RETURN_INV_TAPI;
     );
 
 END SALES_RENT_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -1314,6 +1362,7 @@ END SALES_RENT_INV_DTL_TAPI;
 
 END SALES_RENT_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package SALES_RETURN_INV_DTL_TAPI
@@ -1379,6 +1428,7 @@ END SALES_RENT_INV_TAPI;
     );
 
 end SALES_RETURN_INV_DTL_TAPI;
+
 
 
 /
@@ -1491,6 +1541,7 @@ END SALES_RETURN_INV_TAPI;
 end SETUP_APP_ROLE_TAPI;
 
 
+
 /
 --------------------------------------------------------
 --  DDL for Package SETUP_APP_USER_TAPI
@@ -1534,6 +1585,7 @@ end SETUP_APP_ROLE_TAPI;
 end SETUP_APP_USER_TAPI;
 
 
+
 /
 --------------------------------------------------------
 --  DDL for Package SETUP_PROD_GROUP_TAPI
@@ -1568,6 +1620,7 @@ end SETUP_APP_USER_TAPI;
    );
 
 end SETUP_PROD_GROUP_TAPI;
+
 
 
 /
@@ -1616,6 +1669,7 @@ end SETUP_PROD_GROUP_TAPI;
 
 END SETUP_SAFE_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package SETUP_STORE_TAPI
@@ -1654,6 +1708,7 @@ END SETUP_SAFE_TAPI;
    );
 
 end SETUP_STORE_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -1694,6 +1749,7 @@ end SETUP_STORE_TAPI;
 end SETUP_TAX_GROUP_TAPI;
 
 
+
 /
 --------------------------------------------------------
 --  DDL for Package STORE_FIRST_PERIOD_STOCK_DTL_TAPI
@@ -1724,6 +1780,7 @@ end SETUP_TAX_GROUP_TAPI;
     );
 
 END STORE_FIRST_PERIOD_STOCK_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -1775,6 +1832,7 @@ END STORE_FIRST_PERIOD_STOCK_DTL_TAPI;
 
 END STORE_FIRST_PERIOD_STOCK_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package STORE_STOCKIN_ORDER_DTL_TAPI
@@ -1819,6 +1877,7 @@ END STORE_FIRST_PERIOD_STOCK_TAPI;
     );
 
 END STORE_STOCKIN_ORDER_DTL_TAPI;
+
 
 
 /
@@ -1880,7 +1939,7 @@ END STORE_STOCKIN_ORDER_TAPI;
         P_PRODUCT_UNIT_ID  IN  STORE_STOCKOUT_ORDER_DTL.PRODUCT_UNIT_ID%TYPE DEFAULT NULL,
         P_PRODUCT_ID       IN  STORE_STOCKOUT_ORDER_DTL.PRODUCT_ID%TYPE DEFAULT NULL
     );
-    
+
     PROCEDURE UPD (
         P_TOTAL            IN  STORE_STOCKOUT_ORDER_DTL.TOTAL%TYPE DEFAULT NULL,
         P_DTL_ID           IN  STORE_STOCKOUT_ORDER_DTL.DTL_ID%TYPE,
@@ -1890,12 +1949,13 @@ END STORE_STOCKIN_ORDER_TAPI;
         P_PRODUCT_UNIT_ID  IN  STORE_STOCKOUT_ORDER_DTL.PRODUCT_UNIT_ID%TYPE DEFAULT NULL,
         P_PRODUCT_ID       IN  STORE_STOCKOUT_ORDER_DTL.PRODUCT_ID%TYPE DEFAULT NULL
     );
-    
+
     PROCEDURE DEL (
         P_DTL_ID IN STORE_STOCKOUT_ORDER_DTL.DTL_ID%TYPE
     );
 
 END STORE_STOCKOUT_ORDER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -1938,6 +1998,7 @@ END STORE_STOCKOUT_ORDER_DTL_TAPI;
     );
 
 END STORE_STOCKOUT_ORDER_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -1982,6 +2043,7 @@ END STORE_STOCKOUT_ORDER_TAPI;
 END STORE_TRANSFER_DTL_TAPI;
 
 
+
 /
 --------------------------------------------------------
 --  DDL for Package STORE_TRANSFER_TAPI
@@ -2020,6 +2082,7 @@ END STORE_TRANSFER_DTL_TAPI;
 
 END STORE_TRANSFER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package ZT_QR
@@ -2028,7 +2091,7 @@ END STORE_TRANSFER_TAPI;
   CREATE OR REPLACE EDITIONABLE PACKAGE "ZT_QR" AUTHID DEFINER AS
 /******************************************************************************
     Author:     Zoran Tica
-                ZT-TECH, racunalni�ke storitve s.p.
+                ZT-TECH, racunalniï؟½ke storitve s.p.
                 http://www.zt-tech.eu
 
     PURPOSE:    A package for QR code data and image generation 
