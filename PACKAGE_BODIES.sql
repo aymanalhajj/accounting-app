@@ -1,4 +1,7 @@
 --------------------------------------------------------
+--  File created - الجمعة-أكتوبر-11-2024   
+--------------------------------------------------------
+--------------------------------------------------------
 --  DDL for Package Body ACC_ACCOUNTS_TAPI
 --------------------------------------------------------
 
@@ -63,6 +66,191 @@
     END;
 
 END ACC_ACCOUNTS_TAPI;
+
+
+/
+--------------------------------------------------------
+--  DDL for Package Body ACC_ACCOUNTS_XAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "ACC_ACCOUNTS_XAPI" IS
+   FUNCTION GET_ACCOUNT_NO(
+      P_COMPANY_ID   IN NUMBER,
+      P_PARENT_ID  IN NUMBER
+       )RETURN NUMBER AS
+       
+       v_acc_no number;
+  BEGIN
+if length(P_PARENT_ID)<3 then
+    SELECT NVL(MAX(ACCOUNT_ID),P_PARENT_ID * 100)+1 
+        into v_acc_no 
+    FROM ACC_ACCOUNTS
+        WHERE  COMPANY_ID=P_COMPANY_ID
+        AND    ACCOUNT_PARENT=P_PARENT_ID;
+else
+
+            if length(P_PARENT_ID)<=6 then
+                    SELECT NVL(MAX(ACCOUNT_ID),P_PARENT_ID * 1000)+1 into v_acc_no 
+                    FROM ACC_ACCOUNTS
+                    WHERE  COMPANY_ID=P_COMPANY_ID
+                    AND    ACCOUNT_PARENT=P_PARENT_ID;
+            else
+
+                SELECT NVL(MAX(ACCOUNT_ID),P_PARENT_ID * 1000)+1 into v_acc_no 
+                FROM ACC_ACCOUNTS
+                WHERE  COMPANY_ID=P_COMPANY_ID
+                AND    ACCOUNT_PARENT=P_PARENT_ID;
+
+            end if;
+
+
+
+end if; 
+    RETURN v_acc_no;
+END GET_ACCOUNT_NO;
+
+
+  PROCEDURE ADD_CLIENT_ACCOUNT(
+     P_CLIENT_ID  NUMBER
+   ) AS
+   V_ACCOUNT_ID  NUMBER;
+   V_COMPANY_ID NUMBER;
+   V_PARENT_ACCOUNT  NUMBER;
+   V_ACCOUNT_NO   NUMBER;
+   V_ACCOUNT_REC   ACC_ACCOUNTS%ROWTYPE;
+   V_CLIENT_REC   SALES_CLIENT%ROWTYPE;
+  BEGIN
+    SELECT 
+      *
+     INTO 
+      V_CLIENT_REC
+     FROM SALES_CLIENT
+     WHERE
+     CLIENT_ID=P_CLIENT_ID;
+
+     IF V_CLIENT_REC.ACCOUNT_ID IS NULL THEN 
+
+
+              SELECT ACC_CLIENT
+                INTO V_PARENT_ACCOUNT
+              FROM ACC_SETUP
+              WHERE COMPANY_ID =V_CLIENT_REC.COMPANY_ID ;
+
+              SELECT * 
+               INTO 
+                 V_ACCOUNT_REC
+                FROM ACC_ACCOUNTS
+                WHERE
+                ACCOUNT_ID =V_PARENT_ACCOUNT
+                AND COMPANY_ID=V_CLIENT_REC.COMPANY_ID
+                ;
+            V_ACCOUNT_NO:=GET_ACCOUNT_NO(
+                      P_COMPANY_ID   =>V_CLIENT_REC.COMPANY_ID,
+                      P_PARENT_ID    =>V_PARENT_ACCOUNT
+                       );
+
+              ACC_ACCOUNTS_TAPI.ADD_RECORD(
+                    P_ACCOUNT_NAME_AR   => V_CLIENT_REC.NAME_AR,
+                    P_ACCOUNT_NAME_EN   => V_CLIENT_REC.NAME_EN,
+                    P_ACCOUNT_TYPE      => V_ACCOUNT_REC.ACCOUNT_TYPE,
+                    P_ACCOUNT_ID        => V_ACCOUNT_NO,
+                    P_ACCOUNT_PARENT    => V_PARENT_ACCOUNT,
+                    P_SUB_ACCOUNT       => 0,
+                    P_COMPANY_ID        => V_CLIENT_REC.COMPANY_ID,
+                    P_ACCOUNT_NATURE    => V_ACCOUNT_REC.ACCOUNT_NATURE
+                );
+
+                UPDATE   SALES_CLIENT
+                SET 
+                  ACCOUNT_ID=V_ACCOUNT_NO
+                WHERE
+                CLIENT_ID=P_CLIENT_ID;
+
+
+     ELSE
+
+      UPDATE ACC_ACCOUNTS
+        SET 
+          ACCOUNT_NAME_AR=V_CLIENT_REC.NAME_AR,
+          ACCOUNT_NAME_EN=V_CLIENT_REC.NAME_EN
+        WHERE 
+         ACCOUNT_ID=V_CLIENT_REC.ACCOUNT_ID
+         AND COMPANY_ID=V_CLIENT_REC.COMPANY_ID;
+     END IF;
+
+  END ADD_CLIENT_ACCOUNT;
+
+  PROCEDURE ADD_PROVIDER_ACCOUNT(
+     P_PROVIDER_ID  NUMBER
+   ) AS
+   V_ACCOUNT_ID  NUMBER;
+   V_COMPANY_ID NUMBER;
+   V_PARENT_ACCOUNT  NUMBER;
+   V_ACCOUNT_NO   NUMBER;
+   V_ACCOUNT_REC   ACC_ACCOUNTS%ROWTYPE;
+   V_PROVIDER_REC   SALES_PROVIDER%ROWTYPE;
+  BEGIN
+   SELECT 
+      *
+     INTO 
+      V_PROVIDER_REC
+     FROM SALES_PROVIDER
+     WHERE
+     PROVIDER_ID=P_PROVIDER_ID;
+
+     IF V_PROVIDER_REC.ACCOUNT_ID IS NULL THEN 
+
+
+              SELECT ACC_PROVIDER
+                INTO V_PARENT_ACCOUNT
+              FROM ACC_SETUP
+              WHERE COMPANY_ID =V_PROVIDER_REC.COMPANY_ID ;
+
+              SELECT * 
+               INTO 
+                 V_ACCOUNT_REC
+                FROM ACC_ACCOUNTS
+                WHERE
+                ACCOUNT_ID =V_PARENT_ACCOUNT
+                AND COMPANY_ID=V_PROVIDER_REC.COMPANY_ID
+                ;
+            V_ACCOUNT_NO:=GET_ACCOUNT_NO(
+                      P_COMPANY_ID   =>V_PROVIDER_REC.COMPANY_ID,
+                      P_PARENT_ID    =>V_PARENT_ACCOUNT
+                       );
+
+              ACC_ACCOUNTS_TAPI.ADD_RECORD(
+                    P_ACCOUNT_NAME_AR   => V_PROVIDER_REC.NAME_AR,
+                    P_ACCOUNT_NAME_EN   => V_PROVIDER_REC.NAME_EN,
+                    P_ACCOUNT_TYPE      => V_ACCOUNT_REC.ACCOUNT_TYPE,
+                    P_ACCOUNT_ID        => V_ACCOUNT_NO,
+                    P_ACCOUNT_PARENT    => V_PARENT_ACCOUNT,
+                    P_SUB_ACCOUNT       => 0,
+                    P_COMPANY_ID        => V_PROVIDER_REC.COMPANY_ID,
+                    P_ACCOUNT_NATURE    => V_ACCOUNT_REC.ACCOUNT_NATURE
+                );
+
+                UPDATE   SALES_PROVIDER
+                SET 
+                  ACCOUNT_ID=V_ACCOUNT_NO
+                WHERE
+                PROVIDER_ID=P_PROVIDER_ID;
+
+
+     ELSE
+
+      UPDATE ACC_ACCOUNTS
+        SET 
+          ACCOUNT_NAME_AR=V_PROVIDER_REC.NAME_AR,
+          ACCOUNT_NAME_EN=V_PROVIDER_REC.NAME_EN
+        WHERE 
+         ACCOUNT_ID=V_PROVIDER_REC.ACCOUNT_ID
+         AND COMPANY_ID=V_PROVIDER_REC.COMPANY_ID;
+     END IF;
+
+  END ADD_PROVIDER_ACCOUNT;
+
+END ACC_ACCOUNTS_XAPI;
 
 /
 --------------------------------------------------------
@@ -139,6 +327,7 @@ END ACC_ACCOUNTS_TAPI;
 
 END ACC_JOURNAL_DTL_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body ACC_JOURNAL_TAPI
@@ -181,7 +370,7 @@ END ACC_JOURNAL_DTL_TAPI;
             JOURNAL_DATE = P_JOURNAL_DATE,
             NOTE = P_NOTE,
             COMPANY_ID = P_COMPANY_ID
-            
+
         WHERE
             ACC_JOURNAL_ID = P_ACC_JOURNAL_ID;
 
@@ -199,12 +388,12 @@ END ACC_JOURNAL_DTL_TAPI;
         INTO V_IS_POSTED
         FROM ACC_JOURNAL
         WHERE ACC_JOURNAL_ID  = P_ACC_JOURNAL_ID AND POSTED = 1;
-            
+
         SELECT COMPANY_ID,JOURNAL_DATE
         INTO V_COMPANY_ID,V_JOURNAL_DATE
         FROM ACC_JOURNAL
         WHERE ACC_JOURNAL_ID  = P_ACC_JOURNAL_ID;
-        
+
         IF V_IS_POSTED = 0 THEN
             FOR REC IN (
                 SELECT
@@ -282,6 +471,7 @@ END ACC_JOURNAL_DTL_TAPI;
 
 END ACC_JOURNAL_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body ACC_LEDGER_TAPI
@@ -327,6 +517,7 @@ END ACC_JOURNAL_TAPI;
     END;
 
 END ACC_LEDGER_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -428,6 +619,7 @@ END ACC_LEDGER_TAPI;
     END;
 
 END ACC_VOUCHER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -702,6 +894,7 @@ END ACC_VOUCHER_DTL_TAPI;
 
 END ACC_VOUCHER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body ADMIN_COMPANY_TAPI
@@ -831,6 +1024,7 @@ END ACC_VOUCHER_TAPI;
 
 end ADMIN_COMPANY_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body AUTH
@@ -896,7 +1090,7 @@ end ADMIN_COMPANY_TAPI;
         WHERE
                 PASS = P_PASSWORD
             AND UPPER(USER_NAME) = UPPER(P_USERNAME);
-    
+
         IF V_COUNT > 0 THEN
             RETURN TRUE;
         ELSE
@@ -932,6 +1126,7 @@ end ADMIN_COMPANY_TAPI;
     END;
 END auth;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body COMPUTE
@@ -959,7 +1154,7 @@ END auth;
             TOTAL_AMOUNT               => 0,
             PRE_DISCOUNT_VAT_VALUE     => 0
         );
-        
+
         V_INV_DTL_REC.QUANTITY := P_QUANTITY;
         IF NVL(V_INV_DTL_REC.QUANTITY,0) = 0 THEN
             V_INV_DTL_REC.QUANTITY                  := 1;
@@ -980,9 +1175,9 @@ END auth;
         V_INV_DTL_TBL.EXTEND;
         V_INV_DTL_TBL(1) := V_INV_DTL_REC;
         RETURN V_INV_DTL_TBL;
-        
+
     END;
-    
+
     FUNCTION CALC_VAT (
         P_BASE_AMOUNT           NUMBER,
         P_AMOUNT_WITH_VAT       NUMBER,
@@ -997,7 +1192,7 @@ END auth;
             VAT             => 0,
             AMOUNT_WITH_VAT => 0
         );
-        
+
         IF NVL(P_BASE_AMOUNT,0) > 0 THEN
             V_AMOUNT_VAT_REC.AMOUNT            := ROUND(P_BASE_AMOUNT,9);
         ELSIF NVL(P_AMOUNT_WITH_VAT,0) > 0 THEN
@@ -1005,19 +1200,20 @@ END auth;
         END IF;
         V_AMOUNT_VAT_REC.VAT                := ROUND(V_AMOUNT_VAT_REC.AMOUNT*NVL(P_VAT_PERCENTAGE,0)/100,9);
         V_AMOUNT_VAT_REC.AMOUNT_WITH_VAT    := ROUND(V_AMOUNT_VAT_REC.AMOUNT+V_AMOUNT_VAT_REC.VAT,9);        
-        
+
         IF NVL(P_AMOUNT_WITH_VAT,0) > 0 THEN
             V_DEF := P_AMOUNT_WITH_VAT-V_AMOUNT_VAT_REC.AMOUNT_WITH_VAT;
             V_AMOUNT_VAT_REC.AMOUNT := V_AMOUNT_VAT_REC.AMOUNT+V_DEF;
             V_AMOUNT_VAT_REC.AMOUNT_WITH_VAT    := ROUND(V_AMOUNT_VAT_REC.AMOUNT+V_AMOUNT_VAT_REC.VAT,9);        
         END IF;
-        
+
         V_AMOUNT_VAT_TBL.EXTEND;
         V_AMOUNT_VAT_TBL(1) := V_AMOUNT_VAT_REC;
         RETURN V_AMOUNT_VAT_TBL;
-        
+
     END;
 END COMPUTE;
+
 
 /
 --------------------------------------------------------
@@ -1090,7 +1286,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 5,P_LANG => P_LANG)||'"
             }'));
         END IF;        
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1123,9 +1319,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 6,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1151,9 +1347,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 7,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1207,9 +1403,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 11,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1242,8 +1438,8 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 20,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1276,9 +1472,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 9,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1304,9 +1500,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 3,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1339,9 +1535,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 13,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1360,7 +1556,7 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
+
         IF P_DATA.GET_STRING('country_id') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1382,7 +1578,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 14,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1401,7 +1597,7 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
+
         IF P_DATA.GET_STRING('invoice_date') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1465,7 +1661,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 28,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1484,7 +1680,7 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
+
         IF P_DATA.GET_STRING('invoice_date') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1548,7 +1744,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 28,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1567,8 +1763,8 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
-        
+
+
         IF P_DATA.GET_STRING('invoice_date') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1625,7 +1821,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 27,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1644,7 +1840,7 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
+
         IF P_DATA.GET_STRING('order_date') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1652,7 +1848,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 18,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_DATA.GET_STRING('store_id') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1667,8 +1863,8 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 27,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1678,7 +1874,7 @@ END COMPUTE;
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 1,P_LANG => P_LANG));
         END IF;
     END STOCKOUT_ORDER_VALIDATE;
-    
+
     PROCEDURE CUSTOMER_VALIDATE (
         P_DATA    IN   JSON_OBJECT_T,
         P_LANG    IN   NUMBER,
@@ -1866,7 +2062,7 @@ END COMPUTE;
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
 
-    
+
         IF P_DATA.GET_STRING('status') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -2157,9 +2353,9 @@ PROCEDURE SETUP_TAX_GROUP_VALIDATE (
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 33,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -2343,7 +2539,7 @@ PROCEDURE SETUP_PROD_GROUP_VALIDATE (
         P_RESULT := JSON_OBJECT_T();
 
 
-        
+
         IF P_DATA.GET_STRING('status') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -2358,7 +2554,7 @@ PROCEDURE SETUP_PROD_GROUP_VALIDATE (
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 3,P_LANG => P_LANG)||'"
             }'));
         END IF;
-         
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -2369,6 +2565,7 @@ PROCEDURE SETUP_PROD_GROUP_VALIDATE (
         END IF;
     END SETUP_PROD_GROUP_VALIDATE;
 END DATA_VALIDATION;
+
 
 /
 --------------------------------------------------------
@@ -2413,6 +2610,7 @@ END DATA_VALIDATION;
         UTL_FILE.FREMOVE (P_FOLDER_NAME, P_FILE_NAME );
     END DELETE_FILE;
 END FILE_UTILE;
+
 
 /
 --------------------------------------------------------
@@ -2605,8 +2803,8 @@ END FILE_UTILE;
             WHERE INVOICE_ID = P_INVOICE_ID;
         END LOOP;
     END SALE_INV_JOURNAL;
-    
-    
+
+
     PROCEDURE SALE_RETURN_INV_JOURNAL (
         P_INVOICE_ID      IN  NUMBER
     ) AS
@@ -2791,7 +2989,7 @@ END FILE_UTILE;
             WHERE INVOICE_ID = P_INVOICE_ID;
         END LOOP;
     END SALE_RETURN_INV_JOURNAL;
-    
+
     PROCEDURE PUR_INV_JOURNAL (
         P_INVOICE_ID      IN  NUMBER
     ) AS
@@ -2976,7 +3174,7 @@ END FILE_UTILE;
             WHERE INVOICE_ID = P_INVOICE_ID;
         END LOOP;
     END PUR_INV_JOURNAL;
-    
+
     PROCEDURE PUR_RETURN_INV_JOURNAL (
         P_INVOICE_ID      IN  NUMBER
     ) AS
@@ -3200,7 +3398,7 @@ END FILE_UTILE;
             INTO P_LANG_ID
             FROM SETUP_APP_USER
             WHERE USER_ID = INV.USER_ID;
-            
+
             SELECT MAKE_NOTE.GET_STOCK_JOURNAL_NOTE(
                 P_LANG_ID       => P_LANG_ID,
                 P_JOURNAL_TYPE  => 10,
@@ -3223,8 +3421,8 @@ END FILE_UTILE;
             V_INDEX := V_INDEX+1;
             V_JOURNAL_TABLE.EXTEND;
             V_JOURNAL_TABLE(V_INDEX) := V_JOURNAL_REC;
-            
-            
+
+
             V_JOURNAL_REC.DEBIT := INV.TOTAL_AMOUNT;
             V_JOURNAL_REC.CREDIT := 0;
             V_JOURNAL_REC.ACCOUNT_ID := INV.ACCOUNT_ID;
@@ -3278,7 +3476,7 @@ END FILE_UTILE;
             INTO P_LANG_ID
             FROM SETUP_APP_USER
             WHERE USER_ID = INV.USER_ID;
-            
+
             SELECT MAKE_NOTE.GET_STOCK_JOURNAL_NOTE(
                 P_LANG_ID       => P_LANG_ID,
                 P_JOURNAL_TYPE  => 12,
@@ -3301,8 +3499,8 @@ END FILE_UTILE;
             V_INDEX := V_INDEX+1;
             V_JOURNAL_TABLE.EXTEND;
             V_JOURNAL_TABLE(V_INDEX) := V_JOURNAL_REC;
-            
-            
+
+
             V_JOURNAL_REC.DEBIT := 0;
             V_JOURNAL_REC.CREDIT := INV.TOTAL_AMOUNT;
             V_JOURNAL_REC.ACCOUNT_ID := INV.ACCOUNT_ID;
@@ -3326,6 +3524,7 @@ END FILE_UTILE;
 
 END INV_JOURNAL;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body MAKE_NO
@@ -3344,7 +3543,7 @@ END INV_JOURNAL;
         WHERE COMPANY_ID = P_COMPANY_ID;
         RETURN V_INV_NO;
     END GET_PURCHASE_INV_NO;    
-    
+
     FUNCTION GET_RENT_INV_NO (
         P_COMPANY_ID NUMBER
     ) RETURN NUMBER AS
@@ -3443,6 +3642,7 @@ END INV_JOURNAL;
 
 END MAKE_NO;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body MAKE_NOTE
@@ -3465,19 +3665,19 @@ END MAKE_NO;
         INTO V_JOURNAL_NOTE
         FROM ADMIN_LIST_ITEM 
         WHERE LIST_ID = 7 AND ITEM_NO = P_JOURNAL_TYPE;
-        
+
         SELECT DECODE(P_LANG_ID,1,ITEM_NOTE_EN,ITEM_NOTE_AR) 
         INTO P_INV_TYPE_NOTE
         FROM ADMIN_LIST_ITEM 
         WHERE LIST_ID = 5 AND ITEM_NO = P_INVOICE_TYPE;
-        
+
         SELECT  
-                DECODE(P_FOR_VAT,1,DECODE(P_LANG_ID,1,'VAT of ','ض. القيمة المضافة '),'')  
+                DECODE(P_FOR_VAT,1,DECODE(P_LANG_ID,1,'VAT of ','ط¶. ط§ظ„ظ‚ظٹظ…ط© ط§ظ„ظ…ط¶ط§ظپط© '),'')  
                 || V_JOURNAL_NOTE || ' ' 
                 || P_INV_TYPE_NOTE 
-                || DECODE(P_LANG_ID,1,' of Id:',' رقم:')  
+                || DECODE(P_LANG_ID,1,' of Id:',' ط±ظ‚ظ…:')  
                 || ' ' || P_REF_NO
-                || DECODE(P_LANG_ID,1,' of client:',' العميل:')  
+                || DECODE(P_LANG_ID,1,' of client:',' ط§ظ„ط¹ظ…ظٹظ„:')  
                 || ' ' || P_CLIENT
         INTO V_JOURNAL_NOTE
         FROM DUAL;
@@ -3496,10 +3696,10 @@ END MAKE_NO;
         INTO V_JOURNAL_NOTE
         FROM ADMIN_LIST_ITEM 
         WHERE LIST_ID = 7 AND ITEM_NO = P_JOURNAL_TYPE;
-        
+
         SELECT  
                 V_JOURNAL_NOTE
-                || DECODE(P_LANG_ID,1,' of Id:',' رقم:')  
+                || DECODE(P_LANG_ID,1,' of Id:',' ط±ظ‚ظ…:')  
                 || ' ' || P_REF_NO
         INTO V_JOURNAL_NOTE
         FROM DUAL;
@@ -3507,6 +3707,7 @@ END MAKE_NO;
     END GET_STOCK_JOURNAL_NOTE;
 
 END MAKE_NOTE;
+
 
 /
 --------------------------------------------------------
@@ -3530,7 +3731,7 @@ BEGIN
 END GET_KEY;
 
 
---توليد HASH لكلمة المرور
+--طھظˆظ„ظٹط¯ HASH ظ„ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±
 FUNCTION GET_PWD_HMAC(P_PWD_PLN NVARCHAR2)
       RETURN RAW
 AS
@@ -3544,7 +3745,7 @@ BEGIN
    RETURN L_PWD_MAC;
 END GET_PWD_HMAC;
 
---التحقق من سلامة كلمة المرور
+--ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† ط³ظ„ط§ظ…ط© ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±
 FUNCTION VRFY_PWD_HMAC(P_PWD_PLN NVARCHAR2,P_PWD_HMAC  RAW)
    RETURN NUMBER
 AS 
@@ -3559,6 +3760,7 @@ BEGIN
  END VRFY_PWD_HMAC;
 
 END PWD_SECURITY;
+
 
 /
 --------------------------------------------------------
@@ -3661,6 +3863,7 @@ END PWD_SECURITY;
     end DELETE_SALES_INV_DTL;
 
 end SALES_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -3828,6 +4031,7 @@ end SALES_INV_DTL_TAPI;
 
 END SALES_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_PRODUCT_FILES_TAPI
@@ -3901,6 +4105,7 @@ END SALES_INV_TAPI;
     END;
 
 END SALES_PRODUCT_FILES_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -4005,6 +4210,7 @@ END SALES_PRODUCT_FILES_TAPI;
     END;
 
 END SALES_PURCHASE_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -4183,6 +4389,7 @@ END SALES_PURCHASE_INV_DTL_TAPI;
 
 END SALES_PURCHASE_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_PURCHASE_ORDER_DTL_TAPI
@@ -4286,6 +4493,7 @@ END SALES_PURCHASE_INV_TAPI;
     END;
 
 END SALES_PURCHASE_ORDER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -4460,6 +4668,7 @@ END SALES_PURCHASE_ORDER_DTL_TAPI;
 
 END SALES_PURCHASE_ORDER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_PUR_RETURN_INV_DTL_TAPI
@@ -4563,6 +4772,7 @@ END SALES_PURCHASE_ORDER_TAPI;
     END;
 
 END SALES_PUR_RETURN_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -4741,6 +4951,7 @@ END SALES_PUR_RETURN_INV_DTL_TAPI;
 
 END SALES_PUR_RETURN_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_RENT_INV_DTL_TAPI
@@ -4844,6 +5055,7 @@ END SALES_PUR_RETURN_INV_TAPI;
     END;
 
 END SALES_RENT_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -5022,6 +5234,7 @@ END SALES_RENT_INV_DTL_TAPI;
 
 END SALES_RENT_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_RETURN_INV_DTL_TAPI
@@ -5126,6 +5339,7 @@ END SALES_RENT_INV_TAPI;
     end DELETE_SALES_RETURN_INV_DTL;
 
 end SALES_RETURN_INV_DTL_TAPI;
+
 
 
 /
@@ -5379,6 +5593,7 @@ END SALES_RETURN_INV_TAPI;
 end SETUP_APP_ROLE_TAPI;
 
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SETUP_APP_USER_TAPI
@@ -5468,6 +5683,7 @@ end SETUP_APP_ROLE_TAPI;
 end SETUP_APP_USER_TAPI;
 
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SETUP_PROD_GROUP_TAPI
@@ -5541,6 +5757,7 @@ end SETUP_APP_USER_TAPI;
 
 
 end SETUP_PROD_GROUP_TAPI;
+
 
 
 /
@@ -5642,6 +5859,7 @@ end SETUP_PROD_GROUP_TAPI;
 
 end SETUP_SAFE_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SETUP_STORE_TAPI
@@ -5721,6 +5939,7 @@ end SETUP_SAFE_TAPI;
 
 
 end SETUP_STORE_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -5803,6 +6022,7 @@ end SETUP_STORE_TAPI;
 end SETUP_TAX_GROUP_TAPI;
 
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body STORE_FIRST_PERIOD_STOCK_DTL_TAPI
@@ -5871,6 +6091,7 @@ end SETUP_TAX_GROUP_TAPI;
     END;
 
 END STORE_FIRST_PERIOD_STOCK_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -5989,6 +6210,7 @@ END STORE_FIRST_PERIOD_STOCK_DTL_TAPI;
 
 END STORE_FIRST_PERIOD_STOCK_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body STORE_STOCKIN_ORDER_DTL_TAPI
@@ -6058,6 +6280,7 @@ END STORE_FIRST_PERIOD_STOCK_TAPI;
     END DELETE_STORE_STOCKIN_ORDER_DTL;
 
 END STORE_STOCKIN_ORDER_DTL_TAPI;
+
 
 
 
@@ -6163,6 +6386,7 @@ END STORE_STOCKIN_ORDER_DTL_TAPI;
 
 END STORE_STOCKIN_ORDER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body STORE_STOCKOUT_ORDER_DTL_TAPI
@@ -6231,6 +6455,7 @@ END STORE_STOCKIN_ORDER_TAPI;
     END;
 
 END STORE_STOCKOUT_ORDER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -6329,6 +6554,7 @@ END STORE_STOCKOUT_ORDER_DTL_TAPI;
 
 END STORE_STOCKOUT_ORDER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body STORE_TRANSFER_DTL_TAPI
@@ -6393,6 +6619,7 @@ END STORE_STOCKOUT_ORDER_TAPI;
     END DELETE_STORE_TRANSFER_DTL;
 
 END STORE_TRANSFER_DTL_TAPI;
+
 
 
 /
@@ -6480,6 +6707,7 @@ END STORE_TRANSFER_DTL_TAPI;
     END DELETE_STORE_TRANSFER;
 
 END STORE_TRANSFER_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -9008,5 +9236,6 @@ raise;
 END;
 
 END ZT_QR;
+
 
 /
