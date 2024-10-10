@@ -1,11 +1,331 @@
 --------------------------------------------------------
---  File created - الاثنين-سبتمبر-16-2024   
+--  File created - الجمعة-أكتوبر-11-2024   
 --------------------------------------------------------
+--------------------------------------------------------
+--  DDL for Function ACC_BALS
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "ACC_BALS" (
+    P_COMPANY_ID   NUMBER,
+    P_FROM_DATE       NVARCHAR2,
+    P_TO_DATE         NVARCHAR2,
+    P_WITH_MAIN_ACCS  NUMBER DEFAULT 0
+) RETURN BAL_TABLE AS 
+
+    V_BAL_REC BAL_REC;
+    V_BAL_TABLE BAL_TABLE := BAL_TABLE();
+    V_BAL_TABLE_PERENT BAL_TABLE := BAL_TABLE();
+    V_BAL_TABLE_TEMP BAL_TABLE := BAL_TABLE();
+    V_INDEX NUMBER:= 0;
+    V_INDEX_TEMP NUMBER:= 0;
+    V_LEVEL_NO NUMBER:= 5;
+BEGIN
+    FOR REC IN (
+        WITH in_period as (
+        select 
+        ACCOUNT_ID,
+        SUM(nvl(DEBIT,0)) DEBIT_BAL,
+        SUM(nvl(CREDIT,0)) CREDIT_BAL,
+        DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0)),SUM(NVL(L.CREDIT,0)) -SUM(NVL(L.DEBIT,0))) BAL,
+        DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,1,2) BAL_NATURE
+         from acc_ledger l
+         WHERE l.COMPANY_ID = P_COMPANY_ID AND  JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
+         GROUP BY ACCOUNT_ID
+        )
+        select 
+            ACC.ACCOUNT_ID,
+            account_name_ar,
+            ACCOUNT_NAME_EN,
+            ACCOUNT_PARENT,
+            NVL(DEBIT_BAL,0) DEBIT_BAL,
+            NVL(CREDIT_BAL,0) CREDIT_BAL,
+            NVL(BAL,0) BAL,
+            NVL(BAL_NATURE,ACC.ACCOUNT_NATURE) BAL_NATURE
+        from acc_accounts acc full outer JOIN in_period ON 
+        acc.ACCOUNT_ID = in_period.ACCOUNT_ID
+        WHERE acc.COMPANY_ID = P_COMPANY_ID AND  ACC.SUB_ACCOUNT = 1
+        order by acc.ACCOUNT_ID
+    )
+    LOOP
+        V_INDEX := V_INDEX+1;
+        V_BAL_TABLE.EXTEND;
+        V_BAL_TABLE(V_INDEX) :=  BAL_REC(
+            ACCOUNT_ID          => REC.ACCOUNT_ID,
+            ACCOUNT_PARENT      => REC.ACCOUNT_PARENT,
+            ACCOUNT_NAME_AR     => REC.account_name_ar,
+            ACCOUNT_NAME_EN     => REC.ACCOUNT_NAME_EN,
+            DEBIT_BAL           => REC.DEBIT_BAL,
+            CREDIT_BAL          => REC.CREDIT_BAL,
+            BAL                 => REC.BAL,
+            BAL_NATURE          => REC.BAL_NATURE
+        );
+    END LOOP;
+    V_BAL_TABLE_PERENT := V_BAL_TABLE;
+    WHILE NVL(P_WITH_MAIN_ACCS,0) = 1 AND V_LEVEL_NO > 0 LOOP
+
+        V_INDEX_TEMP := 0;
+        FOR REC IN (
+            select 
+                ACC.ACCOUNT_ID,
+                ACC.account_name_ar,
+                ACC.account_name_EN,
+                ACC.ACCOUNT_PARENT,
+                NVL(DEBIT_BAL,0) DEBIT_BAL,
+                NVL(CREDIT_BAL,0) CREDIT_BAL,
+                NVL(BAL,0) BAL,
+                NVL(BAL_NATURE,ACC.ACCOUNT_NATURE) BAL_NATURE
+            FROM (
+            select 
+                ACCOUNT_PARENT ACCOUNT_ID,
+                sum(DEBIT_BAL) DEBIT_BAL,
+                sum(CREDIT_BAL) CREDIT_BAL,
+                DECODE(SIGN(SUM(NVL(DEBIT_BAL,0)) -SUM(NVL(CREDIT_BAL,0))),1,SUM(NVL(DEBIT_BAL,0)) -SUM(NVL(CREDIT_BAL,0)),SUM(NVL(CREDIT_BAL,0)) -SUM(NVL(DEBIT_BAL,0))) BAL,
+                DECODE(SIGN(SUM(NVL(DEBIT_BAL,0)) -SUM(NVL(CREDIT_BAL,0))),1,1,-1,2,NULL) BAL_NATURE
+            from table( V_BAL_TABLE_PERENT) 
+            group by ACCOUNT_PARENT) TB 
+            JOIN ACC_ACCOUNTS ACC
+            ON TB.ACCOUNT_ID  = ACC.ACCOUNT_ID
+            WHERE acc.COMPANY_ID = P_COMPANY_ID
+        )LOOP
+            V_BAL_REC := BAL_REC(
+                ACCOUNT_ID          => REC.ACCOUNT_ID,
+                ACCOUNT_PARENT      => REC.ACCOUNT_PARENT,
+                ACCOUNT_NAME_AR     => REC.account_name_ar,
+                ACCOUNT_NAME_EN     => REC.ACCOUNT_NAME_EN,
+                DEBIT_BAL           => REC.DEBIT_BAL,
+                CREDIT_BAL          => REC.CREDIT_BAL,
+                BAL                 => REC.BAL,
+                BAL_NATURE          => REC.BAL_NATURE
+            );
+
+            V_INDEX_TEMP := V_INDEX_TEMP+1;
+            V_BAL_TABLE_TEMP.EXTEND;
+            V_BAL_TABLE_TEMP(V_INDEX_TEMP) := V_BAL_REC;
+
+            V_INDEX := V_INDEX+1;
+            V_BAL_TABLE.EXTEND;
+            V_BAL_TABLE(V_INDEX) :=  V_BAL_REC;
+        END LOOP;
+        V_LEVEL_NO := V_LEVEL_NO-1;
+        V_BAL_TABLE_PERENT := V_BAL_TABLE_TEMP;
+        V_BAL_TABLE_TEMP := BAL_TABLE();
+    END LOOP;
+
+
+    RETURN V_BAL_TABLE;
+END ACC_BALS;
+
+
+/
+--------------------------------------------------------
+--  DDL for Function ACC_BALS_BANK
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "ACC_BALS_BANK" (
+    P_COMPANY_ID   NUMBER,
+    P_FROM_DATE       NVARCHAR2,
+    P_TO_DATE         NVARCHAR2,
+    P_BANK_ID  NUMBER DEFAULT 0
+) RETURN BAL_BANK_TBL AS 
+ V_BAL_BANK_REC BAL_BANK_REC := BAL_BANK_REC(
+        ACCOUNT_ID          => NULL,
+        ACCOUNT_NAME_AR     => NULL,
+        ACCOUNT_NAME_EN     => NULL,
+		MAIN_BANK_NAME_AR   => NULL,
+		MAIN_BANK_NAME_EN   => NULL,
+        BANK_NAME_AR        => NULL,
+		BANK_NAME_EN        => NULL,
+		DEBIT_BAL           => NULL,
+        CREDIT_BAL          => NULL,
+        BAL                 => NULL,
+        BAL_NATURE          => NULL
+    );
+	V_MAIN_BANK_NAME_AR NVARCHAR2(200);
+	V_MAIN_BANK_NAME_EN NVARCHAR2(200);
+    V_BAL_BANK_TBL BAL_BANK_TBL:= BAL_BANK_TBL();
+    V_INDEX NUMBER:= 0;
+    V_INDEX_TEMP NUMBER:= 0;
+    V_LEVEL_NO NUMBER:= 5;
+BEGIN
+
+IF P_BANK_ID= 0 THEN 
+  V_MAIN_BANK_NAME_AR   :='الكل';
+  V_MAIN_BANK_NAME_EN    :='All';
+  else  
+    select 
+	  ACC_NAME_AR,
+	  ACC_NAME_EN
+	 into 
+	  V_MAIN_BANK_NAME_AR,
+	  V_MAIN_BANK_NAME_EN
+	 from SETUP_BANK_EXT_ACC
+	 where COMPANY_ID=P_COMPANY_ID
+	 and BANK_ACC_ID=P_BANK_ID;
+
+  end if;
+    FOR REC IN (
+        WITH in_period as (
+        select 
+        ACCOUNT_ID,
+        SUM(nvl(DEBIT,0)) DEBIT_BAL,
+        SUM(nvl(CREDIT,0)) CREDIT_BAL,
+        DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0)),SUM(NVL(L.CREDIT,0)) -SUM(NVL(L.DEBIT,0))) BAL,
+		DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,1,-1,2,NULL) BAL_NATURE
+         from acc_ledger l
+         WHERE l.COMPANY_ID = P_COMPANY_ID AND  JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
+         GROUP BY ACCOUNT_ID
+        )
+        select 
+            ACC.ACCOUNT_ID,
+            account_name_ar,
+            ACCOUNT_NAME_EN,
+			ACC_NAME_AR,
+			ACC_NAME_EN,
+            ACCOUNT_PARENT,
+            NVL(DEBIT_BAL,0) DEBIT_BAL,
+            NVL(CREDIT_BAL,0) CREDIT_BAL,
+            NVL(BAL,0) BAL,
+            NVL(BAL_NATURE,ACC.ACCOUNT_NATURE) BAL_NATURE
+        from acc_accounts acc full outer JOIN in_period ON 
+        acc.ACCOUNT_ID = in_period.ACCOUNT_ID
+		JOIN SETUP_BANK_EXT_ACC SA ON SA.ACCOUNT_ID=ACC.ACCOUNT_ID
+        WHERE SA.COMPANY_ID = P_COMPANY_ID AND (SA.BANK_ACC_ID =P_BANK_ID OR P_BANK_ID=0)
+        order by acc.ACCOUNT_ID
+    )
+    LOOP
+
+            V_BAL_BANK_REC.ACCOUNT_ID        := REC.ACCOUNT_ID;
+            V_BAL_BANK_REC.ACCOUNT_NAME_AR     := REC.ACCOUNT_NAME_AR;
+            V_BAL_BANK_REC.ACCOUNT_NAME_EN     := REC.ACCOUNT_NAME_EN;
+            V_BAL_BANK_REC.MAIN_BANK_NAME_AR   := V_MAIN_BANK_NAME_AR;
+            V_BAL_BANK_REC.MAIN_BANK_NAME_EN   := V_MAIN_BANK_NAME_EN;
+            V_BAL_BANK_REC.BANK_NAME_AR        := REC.ACC_NAME_AR;
+            V_BAL_BANK_REC.BANK_NAME_EN        := REC.ACC_NAME_EN;
+			V_BAL_BANK_REC.DEBIT_BAL           := REC.DEBIT_BAL;
+			V_BAL_BANK_REC.CREDIT_BAL          := REC.CREDIT_BAL;
+			V_BAL_BANK_REC.BAL                 := REC.BAL;
+			V_BAL_BANK_REC.BAL_NATURE          := REC.BAL_NATURE;
+
+
+        V_BAL_BANK_TBL.EXTEND;
+        V_INDEX := V_INDEX+1;
+        V_BAL_BANK_TBL(V_INDEX) := V_BAL_BANK_REC;
+
+ END LOOP;
+
+    RETURN V_BAL_BANK_TBL;
+END ACC_BALS_BANK;
+
+/
+--------------------------------------------------------
+--  DDL for Function ACC_BALS_SAFE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "ACC_BALS_SAFE" (
+    P_COMPANY_ID   NUMBER,
+    P_FROM_DATE       NVARCHAR2,
+    P_TO_DATE         NVARCHAR2,
+    P_SAFE_ID  NUMBER DEFAULT 0
+) RETURN BAL_SAFE_TBL AS 
+ V_BAL_SAFE_REC BAL_SAFE_REC := BAL_SAFE_REC(
+        ACCOUNT_ID          => NULL,
+        ACCOUNT_NAME_AR     => NULL,
+        ACCOUNT_NAME_EN     => NULL,
+		MAIN_SAFE_NAME_AR   => NULL,
+		MAIN_SAFE_NAME_EN   => NULL,
+        SAFE_NAME_AR        => NULL,
+		SAFE_NAME_EN        => NULL,
+		DEBIT_BAL           => NULL,
+        CREDIT_BAL          => NULL,
+        BAL                 => NULL,
+        BAL_NATURE          => NULL
+    );
+	V_MAIN_SAFE_NAME_AR NVARCHAR2(200);
+	V_MAIN_SAFE_NAME_EN NVARCHAR2(200);
+    V_BAL_SAFE_TBL BAL_SAFE_TBL:= BAL_SAFE_TBL();
+    V_INDEX NUMBER:= 0;
+    V_INDEX_TEMP NUMBER:= 0;
+    V_LEVEL_NO NUMBER:= 5;
+BEGIN
+
+IF P_SAFE_ID= 0 THEN 
+  V_MAIN_SAFE_NAME_AR   :='الكل';
+  V_MAIN_SAFE_NAME_EN    :='All';
+  else  
+    select 
+	  SAFE_NAME_AR,
+	  SAFE_NAME_EN
+	 into 
+	  V_MAIN_SAFE_NAME_AR,
+	  V_MAIN_SAFE_NAME_EN
+	 from SETUP_SAFE
+	 where COMPANY_ID=P_COMPANY_ID
+	 and SAFE_ID=P_SAFE_ID;
+
+  end if;
+    FOR REC IN (
+        WITH in_period as (
+        select 
+        ACCOUNT_ID,
+        SUM(nvl(DEBIT,0)) DEBIT_BAL,
+        SUM(nvl(CREDIT,0)) CREDIT_BAL,
+        DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0)),SUM(NVL(L.CREDIT,0)) -SUM(NVL(L.DEBIT,0))) BAL,
+		DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,1,-1,2,NULL) BAL_NATURE
+         from acc_ledger l
+         WHERE l.COMPANY_ID = P_COMPANY_ID AND  JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
+         GROUP BY ACCOUNT_ID
+        )
+        select 
+            ACC.ACCOUNT_ID,
+            account_name_ar,
+            ACCOUNT_NAME_EN,
+			SAFE_NAME_AR,
+			SAFE_NAME_EN,
+            ACCOUNT_PARENT,
+            NVL(DEBIT_BAL,0) DEBIT_BAL,
+            NVL(CREDIT_BAL,0) CREDIT_BAL,
+            NVL(BAL,0) BAL,
+            NVL(BAL_NATURE,ACC.ACCOUNT_NATURE) BAL_NATURE
+        from acc_accounts acc full outer JOIN in_period ON 
+        acc.ACCOUNT_ID = in_period.ACCOUNT_ID
+		JOIN SETUP_SAFE SA ON SA.ACCOUNT_ID=ACC.ACCOUNT_ID
+        WHERE SA.COMPANY_ID = P_COMPANY_ID AND (SA.SAFE_ID =P_SAFE_ID OR P_SAFE_ID=0)
+        order by acc.ACCOUNT_ID
+    )
+    LOOP
+
+            V_BAL_SAFE_REC.ACCOUNT_ID          := REC.ACCOUNT_ID;
+            V_BAL_SAFE_REC.ACCOUNT_NAME_AR     := REC.ACCOUNT_NAME_AR;
+            V_BAL_SAFE_REC.ACCOUNT_NAME_EN     := REC.ACCOUNT_NAME_EN;
+            V_BAL_SAFE_REC.MAIN_SAFE_NAME_AR   := V_MAIN_SAFE_NAME_AR;
+            V_BAL_SAFE_REC.MAIN_SAFE_NAME_EN   := V_MAIN_SAFE_NAME_EN;
+            V_BAL_SAFE_REC.SAFE_NAME_AR        := REC.SAFE_NAME_AR;
+            V_BAL_SAFE_REC.SAFE_NAME_EN        := REC.SAFE_NAME_EN;
+			V_BAL_SAFE_REC.DEBIT_BAL       := REC.DEBIT_BAL;
+			V_BAL_SAFE_REC.CREDIT_BAL        := REC.CREDIT_BAL;
+			V_BAL_SAFE_REC.BAL        := REC.BAL;
+			V_BAL_SAFE_REC.BAL_NATURE        := REC.BAL_NATURE;
+
+
+        V_BAL_SAFE_TBL.EXTEND;
+        V_INDEX := V_INDEX+1;
+        V_BAL_SAFE_TBL(V_INDEX) := V_BAL_SAFE_REC;
+
+ END LOOP;
+
+    RETURN V_BAL_SAFE_TBL;
+END ACC_BALS_SAFE;
+
+/
 --------------------------------------------------------
 --  DDL for Function BALANCE_SHEET
 --------------------------------------------------------
 
-  CREATE OR REPLACE EDITIONABLE FUNCTION "BALANCE_SHEET" (P_TO_DATE NVARCHAR2) RETURN BAL_TABLE AS 
+  CREATE OR REPLACE EDITIONABLE FUNCTION "BALANCE_SHEET" (
+    P_COMPANY_ID   NUMBER,
+    P_TO_DATE        NVARCHAR2,
+    P_FOR_MAIN_ACCS  NUMBER DEFAULT 0
+) RETURN BAL_TABLE AS 
 
     V_BAL_REC BAL_REC;
     V_BAL_TABLE BAL_TABLE := BAL_TABLE();
@@ -21,40 +341,45 @@ BEGIN
         ACCOUNT_ID,
         SUM(nvl(DEBIT,0)) DEBIT_BAL,
         SUM(nvl(CREDIT,0)) CREDIT_BAL
-        from acc_ledger
-        WHERE JOURNAL_DATE < to_date(P_TO_DATE)
+        from acc_ledger L
+        WHERE l.COMPANY_ID = P_COMPANY_ID AND JOURNAL_DATE < to_date(P_TO_DATE,'DD-MM-YYYY')
         GROUP BY ACCOUNT_ID
         )
         select 
         ACC.ACCOUNT_ID,
         account_name_ar,
+        account_name_EN,
         ACCOUNT_PARENT,
         nvl(DEBIT_BAL,0) DEBIT_BAL,
         nvl(CREDIT_BAL,0) CREDIT_BAL
-        from GL full outer join   acc_accounts acc
+        from GL RIGHT join   acc_accounts acc
         on acc.ACCOUNT_ID = GL.ACCOUNT_ID
-        where ACC.SUB_ACCOUNT = 1 AND ACC.ACCOUNT_TYPE = 1
+        WHERE acc.COMPANY_ID = P_COMPANY_ID AND ACC.SUB_ACCOUNT = 1 AND ACC.ACCOUNT_TYPE = 1
         order by acc.ACCOUNT_ID
     )
     LOOP
         V_INDEX := V_INDEX+1;
         V_BAL_TABLE.EXTEND;
         V_BAL_TABLE(V_INDEX) :=  BAL_REC(
-            ACCOUNT_ID => REC.ACCOUNT_ID,
-            ACCOUNT_PARENT => REC.ACCOUNT_PARENT,
-            ACCOUNT_NAME => REC.account_name_ar,
-            DEBIT_BAL => REC.DEBIT_BAL,
-            CREDIT_BAL => REC.CREDIT_BAL
+            ACCOUNT_ID          => REC.ACCOUNT_ID,
+            ACCOUNT_PARENT      => REC.ACCOUNT_PARENT,
+            ACCOUNT_NAME_AR     => REC.account_name_ar,
+            ACCOUNT_NAME_EN     => REC.ACCOUNT_NAME_EN,
+            DEBIT_BAL           => REC.DEBIT_BAL,
+            CREDIT_BAL          => REC.CREDIT_BAL,
+            BAL                 => null,
+            BAL_NATURE          => null
         );
     END LOOP;
     V_BAL_TABLE_PERENT := V_BAL_TABLE;
-    WHILE V_LEVEL_NO > 0 LOOP
+    WHILE NVL(P_FOR_MAIN_ACCS,0) = 1 AND V_LEVEL_NO > 0 LOOP
 
         V_INDEX_TEMP := 0;
         FOR REC IN (
             select 
             ACC.ACCOUNT_ID,
             ACC.account_name_ar,
+            ACC.account_name_EN,
             ACC.ACCOUNT_PARENT,
              DEBIT_BAL,
              CREDIT_BAL
@@ -68,13 +393,17 @@ BEGIN
             group by ACCOUNT_PARENT) BAL 
             JOIN ACC_ACCOUNTS ACC
             ON BAL.ACCOUNT_ID  = ACC.ACCOUNT_ID
+            WHERE acc.COMPANY_ID = P_COMPANY_ID 
         )LOOP
             V_BAL_REC := BAL_REC(
-                ACCOUNT_ID => REC.ACCOUNT_ID,
-                ACCOUNT_PARENT => REC.ACCOUNT_PARENT,
-                ACCOUNT_NAME => REC.account_name_ar,
-                DEBIT_BAL => REC.DEBIT_BAL,
-                CREDIT_BAL => REC.CREDIT_BAL
+                ACCOUNT_ID          => REC.ACCOUNT_ID,
+                ACCOUNT_PARENT      => REC.ACCOUNT_PARENT,
+                ACCOUNT_NAME_AR     => REC.account_name_ar,
+                ACCOUNT_NAME_EN     => REC.ACCOUNT_NAME_EN,
+                DEBIT_BAL           => REC.DEBIT_BAL,
+                CREDIT_BAL          => REC.CREDIT_BAL,
+                BAL                 => null,
+                BAL_NATURE          => null
             );
 
             V_INDEX_TEMP := V_INDEX_TEMP+1;
@@ -287,7 +616,12 @@ END;
 --  DDL for Function INCOME_STATEMENT
 --------------------------------------------------------
 
-  CREATE OR REPLACE EDITIONABLE FUNCTION "INCOME_STATEMENT" (P_TO_DATE NVARCHAR2) RETURN BAL_TABLE AS 
+  CREATE OR REPLACE EDITIONABLE FUNCTION "INCOME_STATEMENT" (
+    P_COMPANY_ID   NUMBER,
+    P_TO_DATE NVARCHAR2 ,
+    P_FOR_MAIN_ACCS  NUMBER DEFAULT 0,
+    P_COST_CNTR_ID   NUMBER DEFAULT 0
+    )RETURN BAL_TABLE AS 
 
     V_BAL_REC BAL_REC;
     V_BAL_TABLE BAL_TABLE := BAL_TABLE();
@@ -304,39 +638,44 @@ BEGIN
         SUM(nvl(DEBIT,0)) DEBIT_BAL,
         SUM(nvl(CREDIT,0)) CREDIT_BAL
         from acc_ledger
-        WHERE JOURNAL_DATE < to_date(P_TO_DATE)
+        WHERE COMPANY_ID = P_COMPANY_ID AND (COST_CNTR_ID=P_COST_CNTR_ID or P_COST_CNTR_ID=0)and JOURNAL_DATE < TO_DATE(P_TO_DATE,'DD-MM-YYYY')
         GROUP BY ACCOUNT_ID
         )
         select 
         ACC.ACCOUNT_ID,
         account_name_ar,
+        ACCOUNT_NAME_en,
         ACCOUNT_PARENT,
         nvl(DEBIT_BAL,0) DEBIT_BAL,
         nvl(CREDIT_BAL,0) CREDIT_BAL
         from GL full outer join   acc_accounts acc
         on acc.ACCOUNT_ID = GL.ACCOUNT_ID
-        where ACC.SUB_ACCOUNT = 1 AND ACC.ACCOUNT_TYPE = 2
+        where ACC.COMPANY_ID = P_COMPANY_ID AND ACC.SUB_ACCOUNT = 1 AND ACC.ACCOUNT_TYPE = 2
         order by acc.ACCOUNT_ID
     )
     LOOP
         V_INDEX := V_INDEX+1;
         V_BAL_TABLE.EXTEND;
         V_BAL_TABLE(V_INDEX) :=  BAL_REC(
-            ACCOUNT_ID => REC.ACCOUNT_ID,
-            ACCOUNT_PARENT => REC.ACCOUNT_PARENT,
-            ACCOUNT_NAME => REC.account_name_ar,
-            DEBIT_BAL => REC.DEBIT_BAL,
-            CREDIT_BAL => REC.CREDIT_BAL
+            ACCOUNT_ID      => REC.ACCOUNT_ID,
+            ACCOUNT_PARENT  => REC.ACCOUNT_PARENT,
+            ACCOUNT_NAME_ar => REC.account_name_ar,
+            ACCOUNT_NAME_en => REC.ACCOUNT_NAME_en,
+            DEBIT_BAL       => REC.DEBIT_BAL,
+            CREDIT_BAL      => REC.CREDIT_BAL,
+            BAL             => null,
+            BAL_NATURE      => null
         );
     END LOOP;
     V_BAL_TABLE_PERENT := V_BAL_TABLE;
-    WHILE V_LEVEL_NO > 0 LOOP
+    WHILE NVL(P_FOR_MAIN_ACCS,0) = 1 AND V_LEVEL_NO > 0 LOOP
 
         V_INDEX_TEMP := 0;
         FOR REC IN (
             select 
             ACC.ACCOUNT_ID,
             ACC.account_name_ar,
+            ACC.account_name_en,
             ACC.ACCOUNT_PARENT,
              DEBIT_BAL,
              CREDIT_BAL
@@ -350,13 +689,17 @@ BEGIN
             group by ACCOUNT_PARENT) BAL 
             JOIN ACC_ACCOUNTS ACC
             ON BAL.ACCOUNT_ID  = ACC.ACCOUNT_ID
+            WHERE acc.COMPANY_ID = P_COMPANY_ID
         )LOOP
             V_BAL_REC := BAL_REC(
-                ACCOUNT_ID => REC.ACCOUNT_ID,
-                ACCOUNT_PARENT => REC.ACCOUNT_PARENT,
-                ACCOUNT_NAME => REC.account_name_ar,
-                DEBIT_BAL => REC.DEBIT_BAL,
-                CREDIT_BAL => REC.CREDIT_BAL
+                ACCOUNT_ID      => REC.ACCOUNT_ID,
+                ACCOUNT_PARENT  => REC.ACCOUNT_PARENT,
+                ACCOUNT_NAME_ar => REC.account_name_ar,
+                ACCOUNT_NAME_en => REC.ACCOUNT_NAME_en,
+                DEBIT_BAL       => REC.DEBIT_BAL,
+                CREDIT_BAL      => REC.CREDIT_BAL,
+                BAL             => null,
+                BAL_NATURE      => null
             );
 
             V_INDEX_TEMP := V_INDEX_TEMP+1;
@@ -375,7 +718,6 @@ BEGIN
 
     RETURN V_BAL_TABLE;
 END INCOME_STATEMENT;
-
 
 /
 --------------------------------------------------------
@@ -560,6 +902,220 @@ END;
 
 /
 --------------------------------------------------------
+--  DDL for Function PRODUCT_TRANS_R
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "PRODUCT_TRANS_R" (
+    P_COMPANY_ID   NUMBER,
+    P_FROM_DATE   VARCHAR2,
+    P_TO_DATE     VARCHAR2,
+    P_STORE_ID    NUMBER DEFAULT 0,
+    P_PRODUCT_ID  NUMBER DEFAULT 0
+) RETURN SALES_PURCHASES_DETAILS_TBL AS 
+    V_SALES_PURCHASES_DETAILS_REC SALES_PURCHASES_DETAILS_REC := SALES_PURCHASES_DETAILS_REC(
+        TRANS_TYPE_AR    => NULL,
+        TRANS_TYPE_EN    => NULL,
+        PRODUCT_NAME_AR  => NULL,
+        PRODUCT_NAME_EN  => NULL,
+        STORE_NAME_AR    => NULL,
+        STORE_NAME_EN    => NULL,
+        PRO_NAME_AR      => NULL,
+        PRO_NAME_EN      => NULL,
+        INVOICE_NO       => NULL,
+        INVOICE_DATE     => NULL,
+        QUANTITY         => NULL,
+        PRICE            => NULL,
+        VAT_VALUE        => NULL,
+        TOTAL_AMOUNT     => NULL
+    );
+    V_SALES_PURCHASES_DETAILS_TBL SALES_PURCHASES_DETAILS_TBL := SALES_PURCHASES_DETAILS_TBL();
+    V_INDEX NUMBER := 0;
+BEGIN
+    FOR REC IN (
+        SELECT
+            'فاتورة بيع'                           TRANS_TYPE_AR,
+            'Sales Invoice'                        TRANS_TYPE_EN,
+            NVL(S.STORE_NAME_AR,S.STORE_NAME_EN)                        STORE_NAME_AR,
+            NVL(S.STORE_NAME_EN,S.STORE_NAME_AR)                        STORE_NAME_EN,
+            I.INVOICE_NO                           INVOICE_NO,
+            TO_CHAR(I.INVOICE_DATE,'dd-MM-yyyy')   INVOICE_DATE,
+            D.QUANTITY                             QUANTITY,
+            D.PRICE                                PRICE,
+            D.TOTAL_PRICE                          TOTAL_PRICE
+        FROM
+            SALES_INV_DTL D JOIN SALES_INV I ON D.INVOICE_ID= I.INVOICE_ID 
+            JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND  (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) 
+                AND (D.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) 
+                AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+                AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        UNION ALL        
+        SELECT
+            'فاتورة مردود بيع'                           TRANS_TYPE_AR,
+            'Sales Return Invoice'                        TRANS_TYPE_EN,
+            NVL(S.STORE_NAME_AR,S.STORE_NAME_EN)                        STORE_NAME_AR,
+            NVL(S.STORE_NAME_EN,S.STORE_NAME_AR)                        STORE_NAME_EN,
+            I.INVOICE_NO                           INVOICE_NO,
+            TO_CHAR(I.INVOICE_DATE,'dd-MM-yyyy')   INVOICE_DATE,
+            D.QUANTITY                             QUANTITY,
+            D.PRICE                                PRICE,
+            D.TOTAL_PRICE                          TOTAL_PRICE
+        FROM
+            SALES_RETURN_INV_DTL D JOIN SALES_RETURN_INV I ON D.INVOICE_ID= I.INVOICE_ID 
+            JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND  (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) 
+                AND (D.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) 
+                AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+                AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        UNION ALL        
+
+        SELECT
+            'فاتورة شراء'                           TRANS_TYPE_AR,
+            'Purchase Invoice'                        TRANS_TYPE_EN,
+            NVL(S.STORE_NAME_AR,S.STORE_NAME_EN)                        STORE_NAME_AR,
+            NVL(S.STORE_NAME_EN,S.STORE_NAME_AR)                        STORE_NAME_EN,
+            I.INVOICE_NO                           INVOICE_NO,
+            TO_CHAR(I.INVOICE_DATE,'dd-MM-yyyy')   INVOICE_DATE,
+            D.QUANTITY                             QUANTITY,
+            D.PRICE                                PRICE,
+            D.TOTAL_PRICE                          TOTAL_PRICE
+        FROM
+            SALES_PURCHASE_INV_DTL D JOIN SALES_PURCHASE_INV I ON D.INVOICE_ID= I.INVOICE_ID 
+            JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND  (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) 
+                AND (D.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) 
+                AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+                AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        UNION ALL        
+        SELECT
+            'فاتورة مردود شراء'                           TRANS_TYPE_AR,
+            'Purchase Return Invoice'                        TRANS_TYPE_EN,
+            NVL(S.STORE_NAME_AR,S.STORE_NAME_EN)                        STORE_NAME_AR,
+            NVL(S.STORE_NAME_EN,S.STORE_NAME_AR)                        STORE_NAME_EN,
+            I.INVOICE_NO                           INVOICE_NO,
+            TO_CHAR(I.INVOICE_DATE,'dd-MM-yyyy')   INVOICE_DATE,
+            D.QUANTITY                             QUANTITY,
+            D.PRICE                                PRICE,
+            D.TOTAL_PRICE                          TOTAL_PRICE
+        FROM
+            SALES_PUR_RETURN_INV_DTL D JOIN SALES_PUR_RETURN_INV I ON D.INVOICE_ID= I.INVOICE_ID 
+            JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND  (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) 
+                AND (D.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) 
+                AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+                AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        UNION ALL        
+        SELECT
+            'توريد مخزني'                           TRANS_TYPE_AR,
+            'Stock In'                        TRANS_TYPE_EN,
+            NVL(S.STORE_NAME_AR,S.STORE_NAME_EN)                        STORE_NAME_AR,
+            NVL(S.STORE_NAME_EN,S.STORE_NAME_AR)                        STORE_NAME_EN,
+            I.ORDER_NO                           INVOICE_NO,
+            TO_CHAR(I.ORDER_DATE,'dd-MM-yyyy')   INVOICE_DATE,
+            D.QUANTITY                             QUANTITY,
+            D.PRICE                                PRICE,
+            D.TOTAL                          TOTAL_PRICE
+        FROM
+            STORE_STOCKIN_ORDER_DTL D JOIN STORE_STOCKIN_ORDER I ON D.ORDER_ID= I.ORDER_ID 
+            JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND  (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) 
+                AND (D.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) 
+                AND ORDER_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+                AND ORDER_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        UNION ALL        
+        SELECT
+            'صرف مخزني'                           TRANS_TYPE_AR,
+            'Stock Out'                        TRANS_TYPE_EN,
+            NVL(S.STORE_NAME_AR,S.STORE_NAME_EN)                        STORE_NAME_AR,
+            NVL(S.STORE_NAME_EN,S.STORE_NAME_AR)                        STORE_NAME_EN,
+            I.ORDER_NO                           INVOICE_NO,
+            TO_CHAR(I.ORDER_DATE,'dd-MM-yyyy')   INVOICE_DATE,
+            D.QUANTITY                             QUANTITY,
+            D.PRICE                                PRICE,
+            D.TOTAL                          TOTAL_PRICE
+        FROM
+            STORE_STOCKOUT_ORDER_DTL D JOIN STORE_STOCKOUT_ORDER I ON D.ORDER_ID= I.ORDER_ID 
+            JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND  (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) 
+                AND (D.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) 
+                AND ORDER_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+                AND ORDER_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        UNION ALL        
+        SELECT
+            'مخزون اول المدة'                           TRANS_TYPE_AR,
+            'First Period Stock'                        TRANS_TYPE_EN,
+            NVL(S.STORE_NAME_AR,S.STORE_NAME_EN)                        STORE_NAME_AR,
+            NVL(S.STORE_NAME_EN,S.STORE_NAME_AR)                        STORE_NAME_EN,
+            I.INVOICE_NO                           INVOICE_NO,
+            TO_CHAR(I.INVOICE_DATE,'dd-MM-yyyy')   INVOICE_DATE,
+            D.QUANTITY                             QUANTITY,
+            D.PRICE                                PRICE,
+            D.TOTAL_AMOUNT                          TOTAL_PRICE
+        FROM
+            STORE_FIRST_PERIOD_STOCK_DTL D JOIN STORE_FIRST_PERIOD_STOCK I ON D.INVOICE_ID= I.INVOICE_ID 
+            JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND  (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) 
+                AND (D.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) 
+                AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+                AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        UNION ALL        
+        SELECT
+            'محول منه'                           TRANS_TYPE_AR,
+            'Transfered From'                        TRANS_TYPE_EN,
+            NVL(S.STORE_NAME_AR,S.STORE_NAME_EN)                        STORE_NAME_AR,
+            NVL(S.STORE_NAME_EN,S.STORE_NAME_AR)                        STORE_NAME_EN,
+            I.TRANSFER_NO                           INVOICE_NO,
+            TO_CHAR(I.TRANSFER_DATE,'dd-MM-yyyy')   INVOICE_DATE,
+            D.QUANTITY                             QUANTITY,
+            D.PRICE                                PRICE,
+            D.QUANTITY*D.PRICE                          TOTAL_PRICE
+        FROM
+            STORE_TRANSFER_DTL D JOIN STORE_TRANSFER I ON D.TRANSFER_ID= I.TRANSFER_ID 
+            JOIN SETUP_STORE S ON I.FROM_STORE_ID = S.STORE_ID
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND  (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) 
+                AND (D.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) 
+                AND TRANSFER_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+                AND TRANSFER_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        UNION ALL        
+        SELECT
+            'محول اليه'                           TRANS_TYPE_AR,
+            'Transfered To'                        TRANS_TYPE_EN,
+            NVL(S.STORE_NAME_AR,S.STORE_NAME_EN)                        STORE_NAME_AR,
+            NVL(S.STORE_NAME_EN,S.STORE_NAME_AR)                        STORE_NAME_EN,
+            I.TRANSFER_NO                           INVOICE_NO,
+            TO_CHAR(I.TRANSFER_DATE,'dd-MM-yyyy')   INVOICE_DATE,
+            D.QUANTITY                             QUANTITY,
+            D.PRICE                                PRICE,
+            D.QUANTITY*D.PRICE                          TOTAL_PRICE
+        FROM
+            STORE_TRANSFER_DTL D JOIN STORE_TRANSFER I ON D.TRANSFER_ID= I.TRANSFER_ID 
+            JOIN SETUP_STORE S ON I.TO_STORE_ID = S.STORE_ID
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND  (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) 
+                AND (D.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) 
+                AND TRANSFER_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+                AND TRANSFER_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        )
+    LOOP
+        V_SALES_PURCHASES_DETAILS_REC.TRANS_TYPE_AR		:= REC.TRANS_TYPE_AR   ;
+        V_SALES_PURCHASES_DETAILS_REC.TRANS_TYPE_EN		:= REC.TRANS_TYPE_EN   ;
+        V_SALES_PURCHASES_DETAILS_REC.STORE_NAME_AR  	:= REC.STORE_NAME_AR   ;
+        V_SALES_PURCHASES_DETAILS_REC.STORE_NAME_EN  	:= REC.STORE_NAME_EN   ;
+        V_SALES_PURCHASES_DETAILS_REC.INVOICE_NO     	:= REC.INVOICE_NO      ;
+        V_SALES_PURCHASES_DETAILS_REC.INVOICE_DATE   	:= REC.INVOICE_DATE    ;
+        V_SALES_PURCHASES_DETAILS_REC.QUANTITY       	:= REC.QUANTITY        ;
+        V_SALES_PURCHASES_DETAILS_REC.PRICE          	:= ROUND(REC.PRICE,2)           ;
+        V_SALES_PURCHASES_DETAILS_REC.TOTAL_AMOUNT     	:= ROUND(REC.TOTAL_PRICE,2)     ;
+        V_SALES_PURCHASES_DETAILS_TBL.EXTEND;
+        V_INDEX := V_INDEX+1;
+        V_SALES_PURCHASES_DETAILS_TBL(V_INDEX) := V_SALES_PURCHASES_DETAILS_REC;
+    END LOOP;
+
+    RETURN V_SALES_PURCHASES_DETAILS_TBL;
+END PRODUCT_TRANS_R;
+
+
+/
+--------------------------------------------------------
 --  DDL for Function PURCHASES_PRODUCT_R
 --------------------------------------------------------
 
@@ -620,49 +1176,62 @@ END PURCHASES_PRODUCT_R;
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "PURCHASES_R" (
+    P_COMPANY_ID   NUMBER,
     P_FROM_DATE    VARCHAR2,
     P_TO_DATE      VARCHAR2,
     P_BRANCH_ID    NUMBER DEFAULT 0
 ) RETURN SALES_PURCHASE_TBL AS 
     V_SALES_PURCHASE_REC SALES_PURCHASE_REC := SALES_PURCHASE_REC(
-        TRANS_TYPE_AR    => NULL,
-        TRANS_TYPE_EN    => NULL,
-        C_NAME_AR        => NULL,
-        C_NAME_EN        => NULL,
-        INVOICE_DATE     => NULL,
-        INVOICE_NO       => NULL,
-        PRE_TAX_AMOUNT   => NULL,
-        VAT_VALUE        => NULL,
-        TOTAL_AMOUNT     => NULL
+        TRANS_TYPE_AR       => NULL,
+        TRANS_TYPE_EN       => NULL,
+        C_NAME_AR           => NULL,
+        C_NAME_EN           => NULL,
+        INVOICE_DATE        => NULL,
+        INVOICE_NO          => NULL,
+        PRE_TAX_AMOUNT      => NULL,
+        VAT_VALUE           => NULL,
+        TOTAL_AMOUNT        => NULL,
+        C_TAX_NO            => NULL,
+        PROVIDER_INV_ID     => NULL,
+        PRE_DISCOUNT_AMOUNT => NULL,
+        TOTAL_DISCOUNT      => NULL
     );
     V_SALES_PURCHASE_TBL SALES_PURCHASE_TBL := SALES_PURCHASE_TBL();
     V_INDEX NUMBER := 0;
 BEGIN
     FOR REC IN (
         SELECT
-            'شراء' TRANS_TYPE_AR,
-            'Purchase' TRANS_TYPE_EN,
-            INVOICE_DATE,
-            INVOICE_NO,
-            POST_DISCOUNT_TOTAL_AMOUNT PRE_TAX_AMOUNT,
-            TOTAL_VAT VAT_VALUE,
-            INVOICE_TOTAL_AMOUNT TOTAL_AMOUNT,
-            C.NAME_AR C_NAME_AR,
-            C.NAME_EN C_NAME_EN
+            'شراء'                              TRANS_TYPE_AR,
+            'Purchase'                          TRANS_TYPE_EN,
+            TO_CHAR(INVOICE_DATE,'dd-mm-yyyy')  INVOICE_DATE,
+            INVOICE_NO                          INVOICE_NO,
+            POST_DISCOUNT_TOTAL_AMOUNT          PRE_TAX_AMOUNT,
+            TOTAL_VAT                           VAT_VALUE,
+            INVOICE_TOTAL_AMOUNT                TOTAL_AMOUNT,
+            C.NAME_AR                           C_NAME_AR,
+            C.NAME_EN                           C_NAME_EN,
+            PRE_TAX_TOTAL_AMOUNT                PRE_DISCOUNT_AMOUNT,
+            TOTAL_DISCOUNT                      TOTAL_DISCOUNT,
+            C.TAX_NO                            C_TAX_NO,
+            INV.PROVIDER_INV_ID                 PROVIDER_INV_ID
         FROM
             SALES_PURCHASE_INV INV left JOIN SALES_PROVIDER C ON INV.PROVIDER_ID = C.PROVIDER_ID
-            WHERE INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE INV.COMPANY_ID = P_COMPANY_ID AND (BRANCH_ID = NVL(P_BRANCH_ID,0) OR NVL(P_BRANCH_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
     )
     LOOP
-        V_SALES_PURCHASE_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
-        V_SALES_PURCHASE_REC.TRANS_TYPE_EN := REC.TRANS_TYPE_EN;
-        V_SALES_PURCHASE_REC.INVOICE_NO := REC.INVOICE_NO;
-        V_SALES_PURCHASE_REC.INVOICE_DATE := REC.INVOICE_DATE;
-        V_SALES_PURCHASE_REC.PRE_TAX_AMOUNT := REC.PRE_TAX_AMOUNT;
-        V_SALES_PURCHASE_REC.VAT_VALUE := REC.VAT_VALUE;
-        V_SALES_PURCHASE_REC.TOTAL_AMOUNT := REC.TOTAL_AMOUNT;
-        V_SALES_PURCHASE_REC.C_NAME_AR := REC.C_NAME_AR;
-        V_SALES_PURCHASE_REC.C_NAME_EN := REC.C_NAME_EN;
+        V_SALES_PURCHASE_REC.TRANS_TYPE_AR          := REC.TRANS_TYPE_AR;
+        V_SALES_PURCHASE_REC.TRANS_TYPE_EN          := REC.TRANS_TYPE_EN;
+        V_SALES_PURCHASE_REC.INVOICE_NO             := REC.INVOICE_NO;
+        V_SALES_PURCHASE_REC.INVOICE_DATE           := REC.INVOICE_DATE;
+        V_SALES_PURCHASE_REC.PRE_TAX_AMOUNT         := REC.PRE_TAX_AMOUNT;
+        V_SALES_PURCHASE_REC.VAT_VALUE              := REC.VAT_VALUE;
+        V_SALES_PURCHASE_REC.TOTAL_AMOUNT           := REC.TOTAL_AMOUNT;
+        V_SALES_PURCHASE_REC.C_NAME_AR              := REC.C_NAME_AR;
+        V_SALES_PURCHASE_REC.C_NAME_EN              := REC.C_NAME_EN;
+        V_SALES_PURCHASE_REC.PRE_DISCOUNT_AMOUNT    := REC.PRE_DISCOUNT_AMOUNT;
+        V_SALES_PURCHASE_REC.TOTAL_DISCOUNT         := REC.TOTAL_DISCOUNT;
+        V_SALES_PURCHASE_REC.C_TAX_NO               := REC.C_TAX_NO;
+        V_SALES_PURCHASE_REC.PROVIDER_INV_ID        := REC.PROVIDER_INV_ID;
         V_SALES_PURCHASE_TBL.EXTEND;
         V_INDEX := V_INDEX+1;
         V_SALES_PURCHASE_TBL(V_INDEX) := V_SALES_PURCHASE_REC;
@@ -670,28 +1239,36 @@ BEGIN
 
     FOR REC IN (
         SELECT
-            'مردود شراء' TRANS_TYPE_AR,
-            'Purchase Return' TRANS_TYPE_EN,
-            INVOICE_DATE,
-            INVOICE_NO,
-            POST_DISCOUNT_TOTAL_AMOUNT PRE_TAX_AMOUNT,
-            TOTAL_VAT VAT_VALUE,
-            INVOICE_TOTAL_AMOUNT TOTAL_AMOUNT,
-            C.NAME_AR C_NAME_AR,
-            C.NAME_EN C_NAME_EN
+            'مردود شراء'                    TRANS_TYPE_AR,
+            'Purchase Return'                   TRANS_TYPE_EN,
+            TO_CHAR(INVOICE_DATE,'dd-mm-yyyy')  INVOICE_DATE,
+            INVOICE_NO                          INVOICE_NO,
+            POST_DISCOUNT_TOTAL_AMOUNT          PRE_TAX_AMOUNT,
+            TOTAL_VAT                           VAT_VALUE,
+            INVOICE_TOTAL_AMOUNT                TOTAL_AMOUNT,
+            C.NAME_AR                           C_NAME_AR,
+            C.NAME_EN                           C_NAME_EN,
+            PRE_TAX_TOTAL_AMOUNT                PRE_DISCOUNT_AMOUNT,
+            TOTAL_DISCOUNT                      TOTAL_DISCOUNT,
+            C.TAX_NO                            C_TAX_NO,
+            I.PROVIDER_INV_ID                   PROVIDER_INV_ID
         FROM SALES_PUR_RETURN_INV I left JOIN SALES_PROVIDER C ON I.PROVIDER_ID = C.PROVIDER_ID
-        WHERE INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        WHERE I.COMPANY_ID = P_COMPANY_ID AND (BRANCH_ID = NVL(P_BRANCH_ID,0) OR NVL(P_BRANCH_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
     )
     LOOP
-        V_SALES_PURCHASE_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
-        V_SALES_PURCHASE_REC.TRANS_TYPE_EN := REC.TRANS_TYPE_EN;
-        V_SALES_PURCHASE_REC.INVOICE_NO := REC.INVOICE_NO;
-        V_SALES_PURCHASE_REC.INVOICE_DATE := REC.INVOICE_DATE;
-        V_SALES_PURCHASE_REC.PRE_TAX_AMOUNT := REC.PRE_TAX_AMOUNT;
-        V_SALES_PURCHASE_REC.VAT_VALUE := REC.VAT_VALUE;
-        V_SALES_PURCHASE_REC.TOTAL_AMOUNT := REC.TOTAL_AMOUNT;
-        V_SALES_PURCHASE_REC.C_NAME_AR := REC.C_NAME_AR;
-        V_SALES_PURCHASE_REC.C_NAME_EN := REC.C_NAME_EN;
+        V_SALES_PURCHASE_REC.TRANS_TYPE_AR          := REC.TRANS_TYPE_AR;
+        V_SALES_PURCHASE_REC.TRANS_TYPE_EN          := REC.TRANS_TYPE_EN;
+        V_SALES_PURCHASE_REC.INVOICE_NO             := REC.INVOICE_NO;
+        V_SALES_PURCHASE_REC.INVOICE_DATE           := REC.INVOICE_DATE;
+        V_SALES_PURCHASE_REC.PRE_TAX_AMOUNT         := REC.PRE_TAX_AMOUNT;
+        V_SALES_PURCHASE_REC.VAT_VALUE              := REC.VAT_VALUE;
+        V_SALES_PURCHASE_REC.TOTAL_AMOUNT           := REC.TOTAL_AMOUNT;
+        V_SALES_PURCHASE_REC.C_NAME_AR              := REC.C_NAME_AR;
+        V_SALES_PURCHASE_REC.C_NAME_EN              := REC.C_NAME_EN;
+        V_SALES_PURCHASE_REC.PRE_DISCOUNT_AMOUNT    := REC.PRE_DISCOUNT_AMOUNT;
+        V_SALES_PURCHASE_REC.TOTAL_DISCOUNT         := REC.TOTAL_DISCOUNT;
+        V_SALES_PURCHASE_REC.C_TAX_NO               := REC.C_TAX_NO;
+        V_SALES_PURCHASE_REC.PROVIDER_INV_ID        := REC.PROVIDER_INV_ID;
         V_SALES_PURCHASE_TBL.EXTEND;
         V_INDEX := V_INDEX+1;
         V_SALES_PURCHASE_TBL(V_INDEX) := V_SALES_PURCHASE_REC;
@@ -702,10 +1279,220 @@ END PURCHASES_R;
 
 /
 --------------------------------------------------------
+--  DDL for Function SALES_EMP_R
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "SALES_EMP_R" (
+    P_FROM_DATE    VARCHAR2,
+    P_TO_DATE      VARCHAR2,
+	p_COMPANY_ID   NUMBER,
+	P_USER_ID    NUMBER
+) RETURN SALES_EMP_TBL AS 
+  
+    V_SALES_EMP_REC SALES_EMP_REC := SALES_EMP_REC(
+	    TRANS_TYPE_AR                      => NULL,
+        TRANS_TYPE_EN                      => NULL,
+		INVOICE_DATE                       => NULL,
+		INVOICE_NO                         => NULL,
+		USER_ID                            => NULL,
+		USER_NAME                          => NULL,
+        PRODUCT_ID                         => NULL,
+		PRODUCT_NO                         => NULL,
+        PRODUCT_NAME_AR                    => NULL,
+		PRODUCT_NAME_EN                    => NULL,
+		BARCODE                            => NULL,
+		QUANTITY                           => NULL,
+		PRICE                              => NULL,
+		TOTAL_AMOUNT                       => NULL,
+		SALES_TOTAL                     => NULL,
+		CASH_SALES_SUM                     => NULL,
+		BANK_SALES_SUM                     => NULL,
+		DEFERRED_SALES_SUM                 => NULL,
+		TAX_SALES_SUM                      => NULL,
+		SALES_RETURN_TOTAL                     => NULL,
+		CASH_SALES_RETURN_SUM              => NULL,
+		BANK_SALES_RETURN_SUM              => NULL,
+		DEFERRED_SALES_RETURN_SUM          => NULL,
+		TAX_SALES_RETURN_SUM               => NULL
+    );
+    V_SALES_EMP_TBL SALES_EMP_TBL := SALES_EMP_TBL();
+    V_INDEX NUMBER := 0;
+    v_sales number;
+	V_SALES_TOTAL               NUMBER; 
+	V_CASH_SALES_SUM                NUMBER;     
+	V_BANK_SALES_SUM                NUMBER;
+	V_DEFERRED_SALES_SUM            NUMBER;
+	V_TAX_SALES_SUM                 NUMBER;
+	V_SALES_RETURN_TOTAL         NUMBER;
+	V_CASH_SALES_RETURN_SUM         NUMBER;
+	V_BANK_SALES_RETURN_SUM         NUMBER;
+	V_DEFERRED_SALES_RETURN_SUM     NUMBER;
+	V_TAX_SALES_RETURN_SUM          NUMBER;
+
+BEGIN
+
+
+            SELECT
+		        NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0)  AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) SALES_TOTAL,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_TYPE = 1 AND PAYMENT_TYPE=1 AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)CASH_SALES_SUM,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_TYPE = 1 AND PAYMENT_TYPE=2 AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)BANK_SALES_SUM,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_TYPE = 2 AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)DEFERRED_SALES_SUM,
+				NVL((SELECT SUM(TOTAL_VAT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0)  AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)TAX_SALES_SUM
+            INTO V_SALES_TOTAL,
+                V_CASH_SALES_SUM,
+                V_BANK_SALES_SUM,
+				V_DEFERRED_SALES_SUM,
+				V_TAX_SALES_SUM
+
+            FROM DUAL;
+
+			SELECT
+		        NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0)  AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) AS SALES_RETURN_TOTAL,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_TYPE = 1 AND PAYMENT_TYPE=1 AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) AS CASH_SALES_RETURN_SUM,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_TYPE = 1 AND PAYMENT_TYPE=2 AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) AS BANK_SALES_RETURN_SUM,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_TYPE = 2 AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) AS DEFERRED_SALES_RETURN_SUM,
+				NVL((SELECT SUM(TOTAL_VAT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND (USER_ID= P_USER_ID OR P_USER_ID = 0)  AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)AS TAX_SALES_RETURN_SUM
+            INTO V_SALES_RETURN_TOTAL,
+                V_CASH_SALES_RETURN_SUM,
+                V_BANK_SALES_RETURN_SUM,
+				V_DEFERRED_SALES_RETURN_SUM,
+				V_TAX_SALES_RETURN_SUM
+            FROM DUAL;
+        FOR REC IN (
+            SELECT
+			P.PRODUCT_ID,
+			P.PRODUCT_NO,
+			P.BARCODE,
+            P.PRODUCT_NAME_AR PRODUCT_NAME_AR,
+            P.PRODUCT_NAME_EN PRODUCT_NAME_EN,
+            D.QUANTITY QUANTITY,
+            D.TOTAL_AMOUNT TOTAL_AMOUNT,
+			D.PRICE,
+			to_char(I.INVOICE_DATE,'dd-MM-yyyy')  AS INVOICE_DATE,
+			I.INVOICE_NO,
+			I.USER_ID,
+            U.USER_NAME USER_NAME
+        FROM
+            SALES_INV_DTL D JOIN SALES_INV I ON D.INVOICE_ID= I.INVOICE_ID 
+            JOIN SALES_PRODUCT P ON D.PRODUCT_ID = P.PRODUCT_ID 
+			JOIN SETUP_APP_USER U ON I.USER_ID = U.USER_ID
+            WHERE I.COMPANY_ID= p_COMPANY_ID  
+			AND (I.USER_ID= P_USER_ID OR P_USER_ID = 0)
+			AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY'))
+
+        LOOP
+		V_SALES_EMP_REC.PRODUCT_ID                  :=REC.PRODUCT_ID ;
+        V_SALES_EMP_REC.PRODUCT_NO                  :=REC.PRODUCT_NO ;
+        V_SALES_EMP_REC.PRODUCT_NAME_AR             :=REC.PRODUCT_NAME_AR ;
+        V_SALES_EMP_REC.PRODUCT_NAME_EN             :=REC.PRODUCT_NAME_EN ;
+        V_SALES_EMP_REC.BARCODE                     :=REC.BARCODE ;
+		V_SALES_EMP_REC.QUANTITY                    :=REC.QUANTITY ;
+        V_SALES_EMP_REC.PRICE                       :=REC.PRICE ;
+		V_SALES_EMP_REC.TOTAL_AMOUNT                :=REC.TOTAL_AMOUNT ;
+		V_SALES_EMP_REC.USER_ID                     :=REC.USER_ID ;
+		V_SALES_EMP_REC.USER_NAME                   :=REC.USER_NAME ;
+
+		        SELECT
+					  ITEM_NOTE_AR  INV_TYPE_AR,
+					  ITEM_NOTE_EN  INV_TYPE_EN
+				INTO 
+					  V_SALES_EMP_REC.TRANS_TYPE_AR        ,
+					  V_SALES_EMP_REC.TRANS_TYPE_EN 
+				FROM
+					ADMIN_LIST_ITEM
+				WHERE LIST_ID = 7 AND ITEM_NO = 4;
+		V_SALES_EMP_REC.SALES_TOTAL                      :=V_SALES_TOTAL ;
+        V_SALES_EMP_REC.CASH_SALES_SUM                   :=V_CASH_SALES_SUM ;
+		V_SALES_EMP_REC.BANK_SALES_SUM                   :=V_BANK_SALES_SUM ;
+		V_SALES_EMP_REC.DEFERRED_SALES_SUM               :=V_DEFERRED_SALES_SUM ;
+        V_SALES_EMP_REC.TAX_SALES_SUM                    :=V_TAX_SALES_SUM;
+
+		V_SALES_EMP_REC.SALES_RETURN_TOTAL                :=V_SALES_RETURN_TOTAL ;
+        V_SALES_EMP_REC.CASH_SALES_RETURN_SUM             :=V_CASH_SALES_RETURN_SUM ;
+		V_SALES_EMP_REC.BANK_SALES_RETURN_SUM             :=V_BANK_SALES_RETURN_SUM ;
+		V_SALES_EMP_REC.DEFERRED_SALES_RETURN_SUM         :=V_DEFERRED_SALES_RETURN_SUM ;
+        V_SALES_EMP_REC.TAX_SALES_RETURN_SUM              :=V_TAX_SALES_RETURN_SUM;
+
+
+
+            V_SALES_EMP_TBL.EXTEND;
+            V_INDEX := V_INDEX+1;
+            V_SALES_EMP_TBL(V_INDEX) := V_SALES_EMP_REC;
+        END LOOP;
+
+		FOR REC IN (
+            SELECT
+			P.PRODUCT_ID,
+			P.PRODUCT_NO,
+			P.BARCODE,
+            P.PRODUCT_NAME_AR PRODUCT_NAME_AR,
+            P.PRODUCT_NAME_EN PRODUCT_NAME_EN,
+            D.QUANTITY QUANTITY,
+            D.TOTAL_AMOUNT TOTAL_AMOUNT,
+			D.PRICE,
+			to_char(I.INVOICE_DATE,'dd-MM-yyyy')  AS INVOICE_DATE,
+			I.INVOICE_NO,
+			I.USER_ID,
+            U.USER_NAME USER_NAME
+        FROM
+            SALES_RETURN_INV_DTL D JOIN SALES_RETURN_INV I ON D.INVOICE_ID= I.INVOICE_ID 
+            JOIN SALES_PRODUCT P ON D.PRODUCT_ID = P.PRODUCT_ID 
+			JOIN SETUP_APP_USER U ON I.USER_ID = U.USER_ID
+            WHERE I.COMPANY_ID= p_COMPANY_ID  
+			AND (I.USER_ID= P_USER_ID OR P_USER_ID = 0)
+			AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY'))
+
+        LOOP
+		V_SALES_EMP_REC.PRODUCT_ID                  :=REC.PRODUCT_ID ;
+        V_SALES_EMP_REC.PRODUCT_NO                  :=REC.PRODUCT_NO ;
+        V_SALES_EMP_REC.PRODUCT_NAME_AR             :=REC.PRODUCT_NAME_AR ;
+        V_SALES_EMP_REC.PRODUCT_NAME_EN             :=REC.PRODUCT_NAME_EN ;
+        V_SALES_EMP_REC.BARCODE                     :=REC.BARCODE ;
+		V_SALES_EMP_REC.QUANTITY                    :=REC.QUANTITY ;
+        V_SALES_EMP_REC.PRICE                       :=REC.PRICE ;
+		V_SALES_EMP_REC.TOTAL_AMOUNT                :=REC.TOTAL_AMOUNT ;
+		V_SALES_EMP_REC.USER_ID                     :=REC.USER_ID ;
+		V_SALES_EMP_REC.USER_NAME                   :=REC.USER_NAME ;
+
+		        SELECT
+					  ITEM_NOTE_AR  INV_TYPE_AR,
+					  ITEM_NOTE_EN  INV_TYPE_EN
+				INTO 
+					  V_SALES_EMP_REC.TRANS_TYPE_AR        ,
+					  V_SALES_EMP_REC.TRANS_TYPE_EN 
+				FROM
+					ADMIN_LIST_ITEM
+				WHERE LIST_ID = 7 AND ITEM_NO = 5;
+		V_SALES_EMP_REC.SALES_TOTAL                      :=V_SALES_TOTAL ;
+        V_SALES_EMP_REC.CASH_SALES_SUM                   :=V_CASH_SALES_SUM ;
+		V_SALES_EMP_REC.BANK_SALES_SUM                   :=V_BANK_SALES_SUM ;
+		V_SALES_EMP_REC.DEFERRED_SALES_SUM               :=V_DEFERRED_SALES_SUM ;
+        V_SALES_EMP_REC.TAX_SALES_SUM                    :=V_TAX_SALES_SUM;
+
+		V_SALES_EMP_REC.SALES_RETURN_TOTAL                :=V_SALES_RETURN_TOTAL ;
+        V_SALES_EMP_REC.CASH_SALES_RETURN_SUM             :=V_CASH_SALES_RETURN_SUM ;
+		V_SALES_EMP_REC.BANK_SALES_RETURN_SUM             :=V_BANK_SALES_RETURN_SUM ;
+		V_SALES_EMP_REC.DEFERRED_SALES_RETURN_SUM         :=V_DEFERRED_SALES_RETURN_SUM ;
+        V_SALES_EMP_REC.TAX_SALES_RETURN_SUM              :=V_TAX_SALES_RETURN_SUM;
+
+
+
+            V_SALES_EMP_TBL.EXTEND;
+            V_INDEX := V_INDEX+1;
+            V_SALES_EMP_TBL(V_INDEX) := V_SALES_EMP_REC;
+        END LOOP;
+
+		RETURN V_SALES_EMP_TBL;
+
+	END	SALES_EMP_R;
+
+/
+--------------------------------------------------------
 --  DDL for Function SALES_PURCHASES_BRANCHES_R
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "SALES_PURCHASES_BRANCHES_R" (
+    P_COMPANY_ID   NUMBER,
     P_FROM_DATE    VARCHAR2,
     P_TO_DATE      VARCHAR2,
     P_BRANCH_ID    NUMBER DEFAULT 0,
@@ -743,7 +1530,7 @@ BEGIN
                 SUM(INVOICE_TOTAL_AMOUNT)POST_TAX_INV_SUM,
                 COUNT(*) CNT
             FROM SALES_INV I JOIN SETUP_BRANCH B ON I.BRANCH_ID = B.BRANCH_ID
-            WHERE (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= NVL(P_BRANCH_ID,0) OR NVL(P_BRANCH_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             GROUP BY I.BRANCH_ID,B.NAME_AR,B.NAME_EN)
         LOOP
             V_SALES_SUMMARY_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
@@ -781,7 +1568,7 @@ BEGIN
                 SUM(INVOICE_TOTAL_AMOUNT)POST_TAX_INV_SUM,
                 COUNT(*) CNT
             FROM SALES_RETURN_INV I JOIN SETUP_BRANCH B ON I.BRANCH_ID = B.BRANCH_ID
-            WHERE (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) AND  INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= NVL(P_BRANCH_ID,0) OR NVL(P_BRANCH_ID,0) = 0) AND  INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             GROUP BY I.BRANCH_ID,B.NAME_AR,B.NAME_EN)
         LOOP
             V_SALES_SUMMARY_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
@@ -818,7 +1605,7 @@ BEGIN
                 SUM(INVOICE_TOTAL_AMOUNT)POST_TAX_INV_SUM,
                 COUNT(*) CNT
             FROM SALES_PURCHASE_INV I JOIN SETUP_BRANCH B ON I.BRANCH_ID = B.BRANCH_ID
-            WHERE (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= NVL(P_BRANCH_ID,0) OR NVL(P_BRANCH_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             GROUP BY I.BRANCH_ID,B.NAME_AR,B.NAME_EN)
         LOOP
             V_SALES_SUMMARY_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
@@ -854,7 +1641,7 @@ BEGIN
                 SUM(INVOICE_TOTAL_AMOUNT)POST_TAX_INV_SUM,
                 COUNT(*) CNT
             FROM SALES_PUR_RETURN_INV I JOIN SETUP_BRANCH B ON I.BRANCH_ID = B.BRANCH_ID
-            WHERE (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) AND  INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= NVL(P_BRANCH_ID,0) OR NVL(P_BRANCH_ID,0) = 0) AND  INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             GROUP BY I.BRANCH_ID,B.NAME_AR,B.NAME_EN)
         LOOP
             V_SALES_SUMMARY_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
@@ -885,10 +1672,220 @@ END SALES_PURCHASES_BRANCHES_R;
 
 /
 --------------------------------------------------------
+--  DDL for Function SALES_PURCHASES_CLIENT_R
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "SALES_PURCHASES_CLIENT_R" (
+    P_FROM_DATE    VARCHAR2,
+    P_TO_DATE      VARCHAR2,
+	p_COMPANY_ID   NUMBER,
+	P_CLIENT_ID    NUMBER
+) RETURN SALES_PURCHASES_CLIENT_TBL AS 
+  
+    V_SALES_PURCHASES_CLIENT_REC SALES_PURCHASES_CLIENT_REC := SALES_PURCHASES_CLIENT_REC(
+	    TRANS_TYPE_AR                      => NULL,
+        TRANS_TYPE_EN                      => NULL,
+		INVOICE_DATE                       => NULL,
+		INVOICE_NO                         => NULL,
+		CLIENT_NAME_AR                     => NULL,
+		CLIENT_NAME_EN                     => NULL,
+        PRODUCT_ID                         => NULL,
+		PRODUCT_NO                         => NULL,
+        PRODUCT_NAME_AR                    => NULL,
+		PRODUCT_NAME_EN                    => NULL,
+		BARCODE                            => NULL,
+		QUANTITY                           => NULL,
+		PRICE                              => NULL,
+		TOTAL_AMOUNT                       => NULL,
+		SALES_TOTAL                     => NULL,
+		CASH_SALES_SUM                     => NULL,
+		BANK_SALES_SUM                     => NULL,
+		DEFERRED_SALES_SUM                 => NULL,
+		TAX_SALES_SUM                      => NULL,
+		SALES_RETURN_TOTAL                     => NULL,
+		CASH_SALES_RETURN_SUM              => NULL,
+		BANK_SALES_RETURN_SUM              => NULL,
+		DEFERRED_SALES_RETURN_SUM          => NULL,
+		TAX_SALES_RETURN_SUM               => NULL
+    );
+    V_SALES_PURCHASES_CLIENT_TBL SALES_PURCHASES_CLIENT_TBL := SALES_PURCHASES_CLIENT_TBL();
+    V_INDEX NUMBER := 0;
+    v_sales number;
+	V_SALES_TOTAL               NUMBER; 
+	V_CASH_SALES_SUM                NUMBER;     
+	V_BANK_SALES_SUM                NUMBER;
+	V_DEFERRED_SALES_SUM            NUMBER;
+	V_TAX_SALES_SUM                 NUMBER;
+	V_SALES_RETURN_TOTAL         NUMBER;
+	V_CASH_SALES_RETURN_SUM         NUMBER;
+	V_BANK_SALES_RETURN_SUM         NUMBER;
+	V_DEFERRED_SALES_RETURN_SUM     NUMBER;
+	V_TAX_SALES_RETURN_SUM          NUMBER;
+
+BEGIN
+
+
+            SELECT
+		        NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID ),0), --AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) SALES_TOTAL,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID AND INVOICE_TYPE = 1 AND PAYMENT_TYPE=1 ),0), --AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)CASH_SALES_SUM,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID AND INVOICE_TYPE = 1 AND PAYMENT_TYPE=2 ),0), --AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)BANK_SALES_SUM,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID AND INVOICE_TYPE = 2 ),0), --AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)DEFERRED_SALES_SUM,
+				NVL((SELECT SUM(TOTAL_VAT) FROM SALES_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID ),0) --AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)TAX_SALES_SUM
+            INTO V_SALES_TOTAL,
+                V_CASH_SALES_SUM,
+                V_BANK_SALES_SUM,
+				V_DEFERRED_SALES_SUM,
+				V_TAX_SALES_SUM
+
+            FROM DUAL;
+
+			SELECT
+		        NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID),0), -- AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) AS SALES_RETURN_TOTAL,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID),0), --AND INVOICE_TYPE = 1 AND PAYMENT_TYPE=1 AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) AS CASH_SALES_RETURN_SUM,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID),0), --AND INVOICE_TYPE = 1 AND PAYMENT_TYPE=2 AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) AS BANK_SALES_RETURN_SUM,
+                NVL((SELECT SUM(INVOICE_TOTAL_AMOUNT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID),0), --AND INVOICE_TYPE = 2 AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0) AS DEFERRED_SALES_RETURN_SUM,
+				NVL((SELECT SUM(TOTAL_VAT) FROM SALES_RETURN_INV WHERE COMPANY_ID = p_COMPANY_ID AND CLIENT_ID=P_CLIENT_ID ),0) --AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')),0)AS TAX_SALES_RETURN_SUM
+            INTO V_SALES_RETURN_TOTAL,
+                V_CASH_SALES_RETURN_SUM,
+                V_BANK_SALES_RETURN_SUM,
+				V_DEFERRED_SALES_RETURN_SUM,
+				V_TAX_SALES_RETURN_SUM
+            FROM DUAL;
+        FOR REC IN (
+            SELECT
+			P.PRODUCT_ID,
+			P.PRODUCT_NO,
+			P.BARCODE,
+            P.PRODUCT_NAME_AR PRODUCT_NAME_AR,
+            P.PRODUCT_NAME_EN PRODUCT_NAME_EN,
+            D.QUANTITY QUANTITY,
+            D.TOTAL_AMOUNT TOTAL_AMOUNT,
+			D.PRICE,
+			to_char(I.INVOICE_DATE,'dd-MM-yyyy')  AS INVOICE_DATE,
+			I.INVOICE_NO,
+			C.NAME_AR  CLIENT_NAME_AR,
+			C.NAME_EN  CLIENT_NAME_EN
+        FROM
+            SALES_INV_DTL D JOIN SALES_INV I ON D.INVOICE_ID= I.INVOICE_ID 
+            JOIN SALES_PRODUCT P ON D.PRODUCT_ID = P.PRODUCT_ID 
+			JOIN SALES_CLIENT C ON C.CLIENT_ID = I.CLIENT_ID
+            WHERE I.COMPANY_ID= p_COMPANY_ID  
+			AND   I.CLIENT_ID=P_CLIENT_ID
+			--AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY'))
+)
+        LOOP
+		V_SALES_PURCHASES_CLIENT_REC.PRODUCT_ID                  :=REC.PRODUCT_ID ;
+        V_SALES_PURCHASES_CLIENT_REC.PRODUCT_NO                  :=REC.PRODUCT_NO ;
+        V_SALES_PURCHASES_CLIENT_REC.PRODUCT_NAME_AR             :=REC.PRODUCT_NAME_AR ;
+        V_SALES_PURCHASES_CLIENT_REC.PRODUCT_NAME_EN             :=REC.PRODUCT_NAME_EN ;
+        V_SALES_PURCHASES_CLIENT_REC.BARCODE                     :=REC.BARCODE ;
+		V_SALES_PURCHASES_CLIENT_REC.QUANTITY                    :=REC.QUANTITY ;
+        V_SALES_PURCHASES_CLIENT_REC.PRICE                       :=REC.PRICE ;
+		V_SALES_PURCHASES_CLIENT_REC.TOTAL_AMOUNT                :=REC.TOTAL_AMOUNT ;
+		V_SALES_PURCHASES_CLIENT_REC.CLIENT_NAME_AR              :=REC.CLIENT_NAME_AR ;
+		V_SALES_PURCHASES_CLIENT_REC.CLIENT_NAME_EN              :=REC.CLIENT_NAME_EN ;
+
+		        SELECT
+					  ITEM_NOTE_AR  INV_TYPE_AR,
+					  ITEM_NOTE_EN  INV_TYPE_EN
+				INTO 
+					  V_SALES_PURCHASES_CLIENT_REC.TRANS_TYPE_AR        ,
+					  V_SALES_PURCHASES_CLIENT_REC.TRANS_TYPE_EN 
+				FROM
+					ADMIN_LIST_ITEM
+				WHERE LIST_ID = 7 AND ITEM_NO = 4;
+		V_SALES_PURCHASES_CLIENT_REC.SALES_TOTAL                      :=V_SALES_TOTAL ;
+        V_SALES_PURCHASES_CLIENT_REC.CASH_SALES_SUM                   :=V_CASH_SALES_SUM ;
+		V_SALES_PURCHASES_CLIENT_REC.BANK_SALES_SUM                   :=V_BANK_SALES_SUM ;
+		V_SALES_PURCHASES_CLIENT_REC.DEFERRED_SALES_SUM               :=V_DEFERRED_SALES_SUM ;
+        V_SALES_PURCHASES_CLIENT_REC.TAX_SALES_SUM                    :=V_TAX_SALES_SUM;
+
+		V_SALES_PURCHASES_CLIENT_REC.SALES_RETURN_TOTAL                :=V_SALES_RETURN_TOTAL ;
+        V_SALES_PURCHASES_CLIENT_REC.CASH_SALES_RETURN_SUM             :=V_CASH_SALES_RETURN_SUM ;
+		V_SALES_PURCHASES_CLIENT_REC.BANK_SALES_RETURN_SUM             :=V_BANK_SALES_RETURN_SUM ;
+		V_SALES_PURCHASES_CLIENT_REC.DEFERRED_SALES_RETURN_SUM         :=V_DEFERRED_SALES_RETURN_SUM ;
+        V_SALES_PURCHASES_CLIENT_REC.TAX_SALES_RETURN_SUM              :=V_TAX_SALES_RETURN_SUM;
+
+
+
+            V_SALES_PURCHASES_CLIENT_TBL.EXTEND;
+            V_INDEX := V_INDEX+1;
+            V_SALES_PURCHASES_CLIENT_TBL(V_INDEX) := V_SALES_PURCHASES_CLIENT_REC;
+        END LOOP;
+
+		FOR REC IN (
+            SELECT
+			P.PRODUCT_ID,
+			P.PRODUCT_NO,
+			P.BARCODE,
+            P.PRODUCT_NAME_AR PRODUCT_NAME_AR,
+            P.PRODUCT_NAME_EN PRODUCT_NAME_EN,
+            D.QUANTITY QUANTITY,
+            D.TOTAL_AMOUNT TOTAL_AMOUNT,
+			D.PRICE,
+			to_char(I.INVOICE_DATE,'dd-MM-yyyy')  AS INVOICE_DATE,
+			I.INVOICE_NO,
+			C.NAME_AR  CLIENT_NAME_AR,
+			C.NAME_EN  CLIENT_NAME_EN
+        FROM
+            SALES_RETURN_INV_DTL D JOIN SALES_RETURN_INV I ON D.INVOICE_ID= I.INVOICE_ID 
+            JOIN SALES_PRODUCT P ON D.PRODUCT_ID = P.PRODUCT_ID 
+			JOIN SALES_CLIENT C ON C.CLIENT_ID = I.CLIENT_ID
+            WHERE I.COMPANY_ID= p_COMPANY_ID  
+			AND   I.CLIENT_ID=P_CLIENT_ID
+			--AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY'))
+)
+        LOOP
+		V_SALES_PURCHASES_CLIENT_REC.PRODUCT_ID                  :=REC.PRODUCT_ID ;
+        V_SALES_PURCHASES_CLIENT_REC.PRODUCT_NO                  :=REC.PRODUCT_NO ;
+        V_SALES_PURCHASES_CLIENT_REC.PRODUCT_NAME_AR             :=REC.PRODUCT_NAME_AR ;
+        V_SALES_PURCHASES_CLIENT_REC.PRODUCT_NAME_EN             :=REC.PRODUCT_NAME_EN ;
+        V_SALES_PURCHASES_CLIENT_REC.BARCODE                     :=REC.BARCODE ;
+		V_SALES_PURCHASES_CLIENT_REC.QUANTITY                    :=REC.QUANTITY ;
+        V_SALES_PURCHASES_CLIENT_REC.PRICE                       :=REC.PRICE ;
+		V_SALES_PURCHASES_CLIENT_REC.TOTAL_AMOUNT                :=REC.TOTAL_AMOUNT ;
+		V_SALES_PURCHASES_CLIENT_REC.CLIENT_NAME_AR              :=REC.CLIENT_NAME_AR ;
+		V_SALES_PURCHASES_CLIENT_REC.CLIENT_NAME_EN              :=REC.CLIENT_NAME_EN ;
+
+		        SELECT
+					  ITEM_NOTE_AR  INV_TYPE_AR,
+					  ITEM_NOTE_EN  INV_TYPE_EN
+				INTO 
+					  V_SALES_PURCHASES_CLIENT_REC.TRANS_TYPE_AR        ,
+					  V_SALES_PURCHASES_CLIENT_REC.TRANS_TYPE_EN 
+				FROM
+					ADMIN_LIST_ITEM
+				WHERE LIST_ID = 7 AND ITEM_NO = 5;
+		V_SALES_PURCHASES_CLIENT_REC.SALES_TOTAL                      :=V_SALES_TOTAL ;
+        V_SALES_PURCHASES_CLIENT_REC.CASH_SALES_SUM                   :=V_CASH_SALES_SUM ;
+		V_SALES_PURCHASES_CLIENT_REC.BANK_SALES_SUM                   :=V_BANK_SALES_SUM ;
+		V_SALES_PURCHASES_CLIENT_REC.DEFERRED_SALES_SUM               :=V_DEFERRED_SALES_SUM ;
+        V_SALES_PURCHASES_CLIENT_REC.TAX_SALES_SUM                    :=V_TAX_SALES_SUM;
+
+		V_SALES_PURCHASES_CLIENT_REC.SALES_RETURN_TOTAL                :=V_SALES_RETURN_TOTAL ;
+        V_SALES_PURCHASES_CLIENT_REC.CASH_SALES_RETURN_SUM             :=V_CASH_SALES_RETURN_SUM ;
+		V_SALES_PURCHASES_CLIENT_REC.BANK_SALES_RETURN_SUM             :=V_BANK_SALES_RETURN_SUM ;
+		V_SALES_PURCHASES_CLIENT_REC.DEFERRED_SALES_RETURN_SUM         :=V_DEFERRED_SALES_RETURN_SUM ;
+        V_SALES_PURCHASES_CLIENT_REC.TAX_SALES_RETURN_SUM              :=V_TAX_SALES_RETURN_SUM;
+
+
+
+            V_SALES_PURCHASES_CLIENT_TBL.EXTEND;
+            V_INDEX := V_INDEX+1;
+            V_SALES_PURCHASES_CLIENT_TBL(V_INDEX) := V_SALES_PURCHASES_CLIENT_REC;
+        END LOOP;
+
+		RETURN V_SALES_PURCHASES_CLIENT_TBL;
+
+	END	SALES_PURCHASES_CLIENT_R;
+
+/
+--------------------------------------------------------
 --  DDL for Function SALES_PURCHASES_DETAILS_R
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "SALES_PURCHASES_DETAILS_R" (
+    P_COMPANY_ID   NUMBER,
     P_FROM_DATE   VARCHAR2,
     P_TO_DATE     VARCHAR2,
     P_STORE_ID    NUMBER DEFAULT 0,
@@ -936,7 +1933,7 @@ BEGIN
             JOIN SALES_PRODUCT P ON D.PRODUCT_ID = P.PRODUCT_ID 
             JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
             JOIN SALES_CLIENT PRO ON I.CLIENT_ID = PRO.CLIENT_ID
-            WHERE (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) AND (P.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (S.STORE_ID= NVL(P_STORE_ID,0) OR NVL(P_STORE_ID,0) = 0) AND (P.PRODUCT_ID = NVL(P_PRODUCT_ID,0) OR NVL(P_PRODUCT_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             )
         LOOP
             V_SALES_PURCHASES_DETAILS_REC.TRANS_TYPE_AR		:= REC.TRANS_TYPE_AR   ;
@@ -980,7 +1977,7 @@ BEGIN
             JOIN SALES_PRODUCT P ON D.PRODUCT_ID = P.PRODUCT_ID 
             JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
             JOIN SALES_CLIENT PRO ON I.CLIENT_ID = PRO.CLIENT_ID
-            WHERE (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) AND (P.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (S.STORE_ID= NVL(P_STORE_ID,0) OR NVL(P_STORE_ID,0) = 0) AND (P.PRODUCT_ID = NVL(P_PRODUCT_ID,0) OR NVL(P_PRODUCT_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             )
         LOOP
             V_SALES_PURCHASES_DETAILS_REC.TRANS_TYPE_AR		:= REC.TRANS_TYPE_AR   ;
@@ -1023,7 +2020,7 @@ BEGIN
                 JOIN SALES_PRODUCT P ON D.PRODUCT_ID = P.PRODUCT_ID 
                 JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
                 JOIN SALES_PROVIDER PRO ON I.PROVIDER_ID = PRO.PROVIDER_ID
-                WHERE (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) AND (P.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+                WHERE I.COMPANY_ID = P_COMPANY_ID AND (S.STORE_ID= NVL(P_STORE_ID,0) OR NVL(P_STORE_ID,0) = 0) AND (P.PRODUCT_ID = NVL(P_PRODUCT_ID,0) OR NVL(P_PRODUCT_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             )
         LOOP
             V_SALES_PURCHASES_DETAILS_REC.TRANS_TYPE_AR		:= REC.TRANS_TYPE_AR   ;
@@ -1065,7 +2062,7 @@ BEGIN
                 JOIN SALES_PRODUCT P ON D.PRODUCT_ID = P.PRODUCT_ID 
                 JOIN SETUP_STORE S ON I.STORE_ID = S.STORE_ID
                 JOIN SALES_PROVIDER PRO ON I.PROVIDER_ID = PRO.PROVIDER_ID
-                WHERE (S.STORE_ID= P_STORE_ID OR P_STORE_ID = 0) AND (P.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+                WHERE I.COMPANY_ID = P_COMPANY_ID AND (S.STORE_ID= NVL(P_STORE_ID,0) OR NVL(P_STORE_ID,0) = 0) AND (P.PRODUCT_ID = NVL(P_PRODUCT_ID,0) OR NVL(P_PRODUCT_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             )
         LOOP
             V_SALES_PURCHASES_DETAILS_REC.TRANS_TYPE_AR		:= REC.TRANS_TYPE_AR   ;
@@ -1097,6 +2094,7 @@ END SALES_PURCHASES_DETAILS_R;
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "SALES_PURCHASES_EMP_R" (
+    P_COMPANY_ID   NUMBER,
     P_FROM_DATE    VARCHAR2,
     P_TO_DATE      VARCHAR2,
     P_USER_ID      NUMBER DEFAULT 0,
@@ -1133,7 +2131,7 @@ BEGIN
                 SUM(INVOICE_TOTAL_AMOUNT)POST_TAX_INV_SUM,
                 COUNT(*) CNT
             FROM SALES_INV I JOIN SETUP_APP_USER U ON I.USER_ID = U.USER_ID
-            WHERE (I.USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             GROUP BY U.USER_ID,U.USER_NAME)
         LOOP
             V_SALES_SUMMARY_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
@@ -1169,7 +2167,7 @@ BEGIN
                 SUM(INVOICE_TOTAL_AMOUNT)POST_TAX_INV_SUM,
                 COUNT(*) CNT
             FROM SALES_RETURN_INV I JOIN SETUP_APP_USER U ON I.USER_ID = U.USER_ID
-            WHERE (I.USER_ID= P_USER_ID OR P_USER_ID = 0) AND  INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.USER_ID= P_USER_ID OR P_USER_ID = 0) AND  INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             GROUP BY I.USER_ID,U.USER_NAME)
         LOOP
             V_SALES_SUMMARY_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
@@ -1204,7 +2202,7 @@ BEGIN
                 SUM(INVOICE_TOTAL_AMOUNT)POST_TAX_INV_SUM,
                 COUNT(*) CNT
             FROM SALES_PURCHASE_INV I JOIN SETUP_APP_USER U ON I.USER_ID = U.USER_ID
-            WHERE (I.USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.USER_ID= P_USER_ID OR P_USER_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             GROUP BY U.USER_ID,U.USER_NAME)
         LOOP
             V_SALES_SUMMARY_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
@@ -1240,7 +2238,7 @@ BEGIN
                 SUM(INVOICE_TOTAL_AMOUNT)POST_TAX_INV_SUM,
                 COUNT(*) CNT
             FROM SALES_PUR_RETURN_INV I JOIN SETUP_APP_USER U ON I.USER_ID = U.USER_ID
-            WHERE (I.USER_ID= P_USER_ID OR P_USER_ID = 0) AND  INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.USER_ID= P_USER_ID OR P_USER_ID = 0) AND  INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             GROUP BY I.USER_ID,U.USER_NAME)
         LOOP
             V_SALES_SUMMARY_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
@@ -1499,49 +2497,60 @@ END SALES_PUR_RETURN_INV_SUMMARY_R;
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "SALES_R" (
+    P_COMPANY_ID   NUMBER,
     P_FROM_DATE    VARCHAR2,
     P_TO_DATE      VARCHAR2,
     P_BRANCH_ID    NUMBER DEFAULT 0
 ) RETURN SALES_PURCHASE_TBL AS 
     V_SALES_PURCHASE_REC SALES_PURCHASE_REC := SALES_PURCHASE_REC(
-        TRANS_TYPE_AR    => NULL,
-        TRANS_TYPE_EN    => NULL,
-        C_NAME_AR        => NULL,
-        C_NAME_EN        => NULL,
-        INVOICE_DATE     => NULL,
-        INVOICE_NO       => NULL,
-        PRE_TAX_AMOUNT   => NULL,
-        VAT_VALUE        => NULL,
-        TOTAL_AMOUNT     => NULL
+        TRANS_TYPE_AR       => NULL,
+        TRANS_TYPE_EN       => NULL,
+        C_NAME_AR           => NULL,
+        C_NAME_EN           => NULL,
+        INVOICE_DATE        => NULL,
+        INVOICE_NO          => NULL,
+        PRE_TAX_AMOUNT      => NULL,
+        VAT_VALUE           => NULL,
+        TOTAL_AMOUNT        => NULL,
+        C_TAX_NO            => NULL,
+        PROVIDER_INV_ID     => NULL,
+        PRE_DISCOUNT_AMOUNT => NULL,
+        TOTAL_DISCOUNT      => NULL
     );
     V_SALES_PURCHASE_TBL SALES_PURCHASE_TBL := SALES_PURCHASE_TBL();
     V_INDEX NUMBER := 0;
 BEGIN
     FOR REC IN (
         SELECT
-        'بيع' TRANS_TYPE_AR,
-        'Sale' TRANS_TYPE_EN,
-        INVOICE_DATE,
-        INVOICE_NO,
-        POST_DISCOUNT_TOTAL_AMOUNT PRE_TAX_AMOUNT,
-        TOTAL_VAT VAT_VALUE,
-        INVOICE_TOTAL_AMOUNT TOTAL_AMOUNT,
-        C.NAME_AR C_NAME_AR,
-        C.NAME_EN C_NAME_EN
+            'بيع'                       TRANS_TYPE_AR,
+            'Sale'                      TRANS_TYPE_EN,
+            TO_CHAR(INVOICE_DATE,'dd-mm-yyyy')  INVOICE_DATE,
+            INVOICE_NO                  INVOICE_NO,
+            POST_DISCOUNT_TOTAL_AMOUNT  PRE_TAX_AMOUNT,
+            TOTAL_VAT                   VAT_VALUE,
+            INVOICE_TOTAL_AMOUNT        TOTAL_AMOUNT,
+            C.NAME_AR                   C_NAME_AR,
+            C.NAME_EN                   C_NAME_EN,
+            PRE_TAX_TOTAL_AMOUNT        PRE_DISCOUNT_AMOUNT,
+            TOTAL_DISCOUNT              TOTAL_DISCOUNT,
+            C.TAX_NO                    C_TAX_NO
     FROM
         SALES_INV INV left JOIN SALES_CLIENT C ON INV.CLIENT_ID = C.CLIENT_ID
-        WHERE INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        WHERE INV.COMPANY_ID = P_COMPANY_ID AND (BRANCH_ID = NVL(P_BRANCH_ID,0) OR NVL(P_BRANCH_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
     )
     LOOP
-        V_SALES_PURCHASE_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
-        V_SALES_PURCHASE_REC.TRANS_TYPE_EN := REC.TRANS_TYPE_EN;
-        V_SALES_PURCHASE_REC.INVOICE_NO := REC.INVOICE_NO;
-        V_SALES_PURCHASE_REC.INVOICE_DATE := REC.INVOICE_DATE;
-        V_SALES_PURCHASE_REC.PRE_TAX_AMOUNT := REC.PRE_TAX_AMOUNT;
-        V_SALES_PURCHASE_REC.VAT_VALUE := REC.VAT_VALUE;
-        V_SALES_PURCHASE_REC.TOTAL_AMOUNT := REC.TOTAL_AMOUNT;
-        V_SALES_PURCHASE_REC.C_NAME_AR := REC.C_NAME_AR;
-        V_SALES_PURCHASE_REC.C_NAME_EN := REC.C_NAME_EN;
+        V_SALES_PURCHASE_REC.TRANS_TYPE_AR          := REC.TRANS_TYPE_AR;
+        V_SALES_PURCHASE_REC.TRANS_TYPE_EN          := REC.TRANS_TYPE_EN;
+        V_SALES_PURCHASE_REC.INVOICE_NO             := REC.INVOICE_NO;
+        V_SALES_PURCHASE_REC.INVOICE_DATE           := REC.INVOICE_DATE;
+        V_SALES_PURCHASE_REC.PRE_TAX_AMOUNT         := REC.PRE_TAX_AMOUNT;
+        V_SALES_PURCHASE_REC.VAT_VALUE              := REC.VAT_VALUE;
+        V_SALES_PURCHASE_REC.TOTAL_AMOUNT           := REC.TOTAL_AMOUNT;
+        V_SALES_PURCHASE_REC.C_NAME_AR              := REC.C_NAME_AR;
+        V_SALES_PURCHASE_REC.C_NAME_EN              := REC.C_NAME_EN;
+        V_SALES_PURCHASE_REC.PRE_DISCOUNT_AMOUNT    := REC.PRE_DISCOUNT_AMOUNT;
+        V_SALES_PURCHASE_REC.TOTAL_DISCOUNT         := REC.TOTAL_DISCOUNT;
+        V_SALES_PURCHASE_REC.C_TAX_NO               := REC.C_TAX_NO;
         V_SALES_PURCHASE_TBL.EXTEND;
         V_INDEX := V_INDEX+1;
         V_SALES_PURCHASE_TBL(V_INDEX) := V_SALES_PURCHASE_REC;
@@ -1549,28 +2558,34 @@ BEGIN
 
     FOR REC IN (
         SELECT
-            'مردود بيع' TRANS_TYPE_AR,
-            'Sales Return' TRANS_TYPE_EN,
-            INVOICE_DATE,
-            INVOICE_NO,
-            POST_DISCOUNT_TOTAL_AMOUNT PRE_TAX_AMOUNT,
-            TOTAL_VAT VAT_VALUE,
-            INVOICE_TOTAL_AMOUNT TOTAL_AMOUNT,
-            C.NAME_AR C_NAME_AR,
-            C.NAME_EN C_NAME_EN
+            'مردود بيع'                 TRANS_TYPE_AR,
+            'Sales Return'              TRANS_TYPE_EN,
+            TO_CHAR(INVOICE_DATE,'dd-mm-yyyy')  INVOICE_DATE,
+            INVOICE_NO                  INVOICE_NO,
+            POST_DISCOUNT_TOTAL_AMOUNT  PRE_TAX_AMOUNT,
+            TOTAL_VAT                   VAT_VALUE,
+            INVOICE_TOTAL_AMOUNT        TOTAL_AMOUNT,
+            C.NAME_AR                   C_NAME_AR,
+            C.NAME_EN                   C_NAME_EN,
+            PRE_TAX_TOTAL_AMOUNT        PRE_DISCOUNT_AMOUNT,
+            TOTAL_DISCOUNT              TOTAL_DISCOUNT,
+            C.TAX_NO                    C_TAX_NO
         FROM SALES_RETURN_INV I left JOIN SALES_CLIENT C ON I.CLIENT_ID = C.CLIENT_ID
-        WHERE INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+        WHERE I.COMPANY_ID = P_COMPANY_ID AND (BRANCH_ID = NVL(P_BRANCH_ID,0) OR NVL(P_BRANCH_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
     )
     LOOP
-        V_SALES_PURCHASE_REC.TRANS_TYPE_AR := REC.TRANS_TYPE_AR;
-        V_SALES_PURCHASE_REC.TRANS_TYPE_EN := REC.TRANS_TYPE_EN;
-        V_SALES_PURCHASE_REC.INVOICE_NO := REC.INVOICE_NO;
-        V_SALES_PURCHASE_REC.INVOICE_DATE := REC.INVOICE_DATE;
-        V_SALES_PURCHASE_REC.PRE_TAX_AMOUNT := REC.PRE_TAX_AMOUNT;
-        V_SALES_PURCHASE_REC.VAT_VALUE := REC.VAT_VALUE;
-        V_SALES_PURCHASE_REC.TOTAL_AMOUNT := REC.TOTAL_AMOUNT;
-        V_SALES_PURCHASE_REC.C_NAME_AR := REC.C_NAME_AR;
-        V_SALES_PURCHASE_REC.C_NAME_EN := REC.C_NAME_EN;
+        V_SALES_PURCHASE_REC.TRANS_TYPE_AR          := REC.TRANS_TYPE_AR;
+        V_SALES_PURCHASE_REC.TRANS_TYPE_EN          := REC.TRANS_TYPE_EN;
+        V_SALES_PURCHASE_REC.INVOICE_NO             := REC.INVOICE_NO;
+        V_SALES_PURCHASE_REC.INVOICE_DATE           := REC.INVOICE_DATE;
+        V_SALES_PURCHASE_REC.PRE_TAX_AMOUNT         := REC.PRE_TAX_AMOUNT;
+        V_SALES_PURCHASE_REC.VAT_VALUE              := REC.VAT_VALUE;
+        V_SALES_PURCHASE_REC.TOTAL_AMOUNT           := REC.TOTAL_AMOUNT;
+        V_SALES_PURCHASE_REC.C_NAME_AR              := REC.C_NAME_AR;
+        V_SALES_PURCHASE_REC.C_NAME_EN              := REC.C_NAME_EN;
+        V_SALES_PURCHASE_REC.PRE_DISCOUNT_AMOUNT    := REC.PRE_DISCOUNT_AMOUNT;
+        V_SALES_PURCHASE_REC.TOTAL_DISCOUNT         := REC.TOTAL_DISCOUNT;
+        V_SALES_PURCHASE_REC.C_TAX_NO               := REC.C_TAX_NO;
         V_SALES_PURCHASE_TBL.EXTEND;
         V_INDEX := V_INDEX+1;
         V_SALES_PURCHASE_TBL(V_INDEX) := V_SALES_PURCHASE_REC;
@@ -1585,6 +2600,7 @@ END SALES_R;
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "SALES_WITH_NET_PROFITS_R" (
+    P_COMPANY_ID   NUMBER,
     P_FROM_DATE   VARCHAR2,
     P_TO_DATE     VARCHAR2,
     P_BRANCH_ID    NUMBER DEFAULT 0,
@@ -1618,7 +2634,7 @@ BEGIN
             SALES_INV_DTL D
             JOIN SALES_INV      I ON D.INVOICE_ID = I.INVOICE_ID
             JOIN SALES_PRODUCT  P ON D.PRODUCT_ID = P.PRODUCT_ID
-            WHERE (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) AND (P.PRODUCT_ID = P_PRODUCT_ID OR P_PRODUCT_ID = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+            WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= NVL(P_BRANCH_ID,0) OR NVL(P_BRANCH_ID,0) = 0) AND (P.PRODUCT_ID = NVL(P_PRODUCT_ID,0) OR NVL(P_PRODUCT_ID,0) = 0) AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
             )
     LOOP
         V_SALES_WITH_NET_PROFITS_REC.PRODUCT_NO		:= REC.PRODUCT_NO   ;
@@ -1640,19 +2656,146 @@ END SALES_WITH_NET_PROFITS_R;
 
 /
 --------------------------------------------------------
+--  DDL for Function STORE_PRODUCT_TOTAL_MOVEMENTS_R
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "STORE_PRODUCT_TOTAL_MOVEMENTS_R" (
+    P_COM_ID    NUMBER,
+    P_PRODUCT_ID  NUMBER DEFAULT 0
+) RETURN PRODUCT_MOVEMENTS_TBL AS 
+    V_PRODUCT_MOVEMENTS_REC PRODUCT_MOVEMENTS_REC := PRODUCT_MOVEMENTS_REC(
+        PRODUCT_NO       => NULL,
+        PRODUCT_BARCODE  => NULL,
+        PRODUCT_NAME_AR  => NULL,
+        PRODUCT_NAME_EN  => NULL,
+		MAIN_PRODUCT_NAME_AR  => NULL,
+        MAIN_PRODUCT_NAME_EN  => NULL,
+        BAL              => NULL,
+        COST_AVG         => NULL,
+        COST_TOTAL       => NULL,
+		FIRST_PERIOD     => NULL,
+		PURCHASE   => NULL,
+		PUR_RETURN => NULL,
+		SALES            => NULL,
+		SALES_RETURN     => NULL,
+		STOCKIN          => NULL,
+		STOCKOUT         => NULL,
+		ADJUSTMENT       =>NULL
+		                           
+    );
+    V_PRODUCT_MOVEMENTS_TBL PRODUCT_MOVEMENTS_TBL := PRODUCT_MOVEMENTS_TBL();
+    V_INDEX NUMBER := 0;
+    V_QUANTITY NUMBER := 0;
+    V_COST NUMBER := 0;
+	V_MAIN_PRODUCT_NAME_AR  VARCHAR2(100);
+	V_MAIN_PRODUCT_NAME_EN  VARCHAR2(100);
+BEGIN
+   IF P_PRODUCT_ID=0 THEN  
+   V_MAIN_PRODUCT_NAME_AR :='الكل';
+   V_MAIN_PRODUCT_NAME_EN :='All';
+   ELSE  
+     select 
+	 PRODUCT_NAME_AR,
+	 PRODUCT_NAME_EN
+	 into 
+	 V_MAIN_PRODUCT_NAME_AR,
+	 V_MAIN_PRODUCT_NAME_EN
+	 from SALES_PRODUCT
+	 where 
+	 COMPANY_ID=P_COM_ID
+	 and PRODUCT_ID=P_PRODUCT_ID
+	 ;
+   END IF;
+    FOR REC IN (
+        SELECT
+            P.PRODUCT_ID         PRODUCT_ID,
+            P.PRODUCT_NO         PRODUCT_NO,
+            P.BARCODE            PRODUCT_BARCODE,
+            P.PRODUCT_NAME_AR    PRODUCT_NAME_AR,
+            P.PRODUCT_NAME_EN    PRODUCT_NAME_EN
+        FROM
+            SALES_PRODUCT P
+        WHERE COMPANY_ID = P_COM_ID
+		AND (PRODUCT_ID=P_PRODUCT_ID OR P_PRODUCT_ID=0)
+        )
+    LOOP
+        V_QUANTITY := 0;
+        V_COST := 0;
+        V_PRODUCT_MOVEMENTS_REC.BAL :=0;
+        V_PRODUCT_MOVEMENTS_REC.PRODUCT_NO		:= REC.PRODUCT_NO   ;
+        V_PRODUCT_MOVEMENTS_REC.PRODUCT_BARCODE		:= REC.PRODUCT_BARCODE   ;
+        V_PRODUCT_MOVEMENTS_REC.PRODUCT_NAME_AR	:= REC.PRODUCT_NAME_AR ;
+        V_PRODUCT_MOVEMENTS_REC.PRODUCT_NAME_EN	:= REC.PRODUCT_NAME_EN ;
+		V_PRODUCT_MOVEMENTS_REC.MAIN_PRODUCT_NAME_AR	:= V_MAIN_PRODUCT_NAME_AR ;
+        V_PRODUCT_MOVEMENTS_REC.MAIN_PRODUCT_NAME_EN	:= V_MAIN_PRODUCT_NAME_EN ;
+		 V_PRODUCT_MOVEMENTS_REC.ADJUSTMENT	:= 0 ;
+        SELECT V_PRODUCT_MOVEMENTS_REC.BAL+NVL(SUM(QUANTITY),0),NVL(SUM(QUANTITY),0),NVL(SUM(TOTAL_AMOUNT),0),NVL(SUM(QUANTITY),0)
+        INTO V_PRODUCT_MOVEMENTS_REC.BAL,V_QUANTITY,V_COST,V_PRODUCT_MOVEMENTS_REC.PURCHASE
+        FROM SALES_PURCHASE_INV_DTL D JOIN SALES_PURCHASE_INV I ON I.INVOICE_ID  = D.INVOICE_ID
+        WHERE I.COMPANY_ID = P_COM_ID  AND  D.PRODUCT_ID = REC.PRODUCT_ID ;
+
+        SELECT V_PRODUCT_MOVEMENTS_REC.BAL+NVL(SUM(QUANTITY),0),NVL(SUM(QUANTITY),0)
+        INTO V_PRODUCT_MOVEMENTS_REC.BAL,V_PRODUCT_MOVEMENTS_REC.SALES_RETURN
+        FROM SALES_RETURN_INV_DTL D JOIN SALES_RETURN_INV I ON I.INVOICE_ID  = D.INVOICE_ID
+        WHERE I.COMPANY_ID = P_COM_ID AND  D.PRODUCT_ID = REC.PRODUCT_ID ;
+
+        SELECT V_PRODUCT_MOVEMENTS_REC.BAL+NVL(SUM(QUANTITY),0),NVL(SUM(QUANTITY),0)
+        INTO V_PRODUCT_MOVEMENTS_REC.BAL,V_PRODUCT_MOVEMENTS_REC.STOCKIN
+        FROM STORE_STOCKIN_ORDER_DTL D JOIN STORE_STOCKIN_ORDER I ON I.ORDER_ID  = D.ORDER_ID
+        WHERE I.COMPANY_ID = P_COM_ID  AND  D.PRODUCT_ID = REC.PRODUCT_ID ;
+
+        SELECT V_PRODUCT_MOVEMENTS_REC.BAL+NVL(SUM(QUANTITY),0),NVL(SUM(QUANTITY),0)
+        INTO V_PRODUCT_MOVEMENTS_REC.BAL,V_PRODUCT_MOVEMENTS_REC.FIRST_PERIOD
+        FROM STORE_FIRST_PERIOD_STOCK_DTL D JOIN STORE_FIRST_PERIOD_STOCK I ON I.INVOICE_ID  = D.INVOICE_ID
+        WHERE I.COMPANY_ID = P_COM_ID  AND  D.PRODUCT_ID = REC.PRODUCT_ID ;
+
+
+        SELECT V_PRODUCT_MOVEMENTS_REC.BAL-NVL(SUM(QUANTITY),0),V_QUANTITY-NVL(SUM(QUANTITY),0),V_COST-NVL(SUM(TOTAL_AMOUNT),0),NVL(SUM(QUANTITY),0)
+        INTO V_PRODUCT_MOVEMENTS_REC.BAL,V_QUANTITY,V_COST,V_PRODUCT_MOVEMENTS_REC.PUR_RETURN
+        FROM SALES_PUR_RETURN_INV_DTL D JOIN SALES_PUR_RETURN_INV I ON I.INVOICE_ID  = D.INVOICE_ID
+        WHERE I.COMPANY_ID = P_COM_ID AND D.PRODUCT_ID = REC.PRODUCT_ID ;
+
+        SELECT V_PRODUCT_MOVEMENTS_REC.BAL-NVL(SUM(QUANTITY),0),NVL(SUM(QUANTITY),0)
+        INTO V_PRODUCT_MOVEMENTS_REC.BAL,V_PRODUCT_MOVEMENTS_REC.SALES
+        FROM SALES_INV_DTL D JOIN SALES_INV I ON I.INVOICE_ID  = D.INVOICE_ID
+        WHERE I.COMPANY_ID = P_COM_ID  AND  D.PRODUCT_ID = REC.PRODUCT_ID ;
+
+        SELECT V_PRODUCT_MOVEMENTS_REC.BAL-NVL(SUM(QUANTITY),0),NVL(SUM(QUANTITY),0)
+        INTO V_PRODUCT_MOVEMENTS_REC.BAL,V_PRODUCT_MOVEMENTS_REC.STOCKOUT
+        FROM STORE_STOCKOUT_ORDER_DTL D JOIN STORE_STOCKOUT_ORDER I ON I.ORDER_ID  = D.ORDER_ID
+        WHERE I.COMPANY_ID = P_COM_ID  AND  D.PRODUCT_ID = REC.PRODUCT_ID ;
+
+
+
+        SELECT ROUND(V_COST/DECODE(V_QUANTITY,0,1,V_QUANTITY),5)
+        INTO V_PRODUCT_MOVEMENTS_REC.COST_AVG
+        FROM DUAL;
+        V_PRODUCT_MOVEMENTS_REC.COST_TOTAL:= ROUND(V_PRODUCT_MOVEMENTS_REC.COST_AVG*V_PRODUCT_MOVEMENTS_REC.BAL,5);
+
+        V_PRODUCT_MOVEMENTS_TBL.EXTEND;
+        V_INDEX := V_INDEX+1;
+        V_PRODUCT_MOVEMENTS_TBL(V_INDEX) := V_PRODUCT_MOVEMENTS_REC;
+    END LOOP;
+    RETURN V_PRODUCT_MOVEMENTS_TBL;
+END STORE_PRODUCT_TOTAL_MOVEMENTS_R;
+
+/
+--------------------------------------------------------
 --  DDL for Function STORES_STATISTICS_R
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "STORES_STATISTICS_R" (
     P_COM_ID    NUMBER,
-    P_DATE      VARCHAR2,
-    P_STORE_ID  NUMBER
+    P_DATE      VARCHAR2 DEFAULT NULL,
+    P_STORE_ID  NUMBER  DEFAULT 0
 ) RETURN STORES_STATISTICS_TBL AS 
     V_STORES_STATISTICS_REC STORES_STATISTICS_REC := STORES_STATISTICS_REC(
         PRODUCT_NO       => NULL,
         PRODUCT_BARCODE  => NULL,
         PRODUCT_NAME_AR  => NULL,
         PRODUCT_NAME_EN  => NULL,
+		STORE_NAME_AR    => NULL,
+		STORE_NAME_EN    => NULL,
         BAL              => NULL,
         COST_AVG         => NULL,
         COST_TOTAL       => NULL
@@ -1661,7 +2804,24 @@ END SALES_WITH_NET_PROFITS_R;
     V_INDEX NUMBER := 0;
     V_QUANTITY NUMBER := 0;
     V_COST NUMBER := 0;
+    V_STORE_NAME_AR VARCHAR2(200);
+    V_STORE_NAME_EN VARCHAR2(200);
 BEGIN
+IF P_STORE_ID= 0 THEN 
+  V_STORE_NAME_AR   :='الكل';
+  V_STORE_NAME_EN    :='All';
+  else  
+    select 
+	  STORE_NAME_AR,
+	  STORE_NAME_EN
+	 into 
+	  V_STORE_NAME_AR,
+	  V_STORE_NAME_EN
+	 from SETUP_STORE
+	 where COMPANY_ID=P_COM_ID
+	 and STORE_ID=P_STORE_ID;
+
+  end if;
     FOR REC IN (
         SELECT
             P.PRODUCT_ID         PRODUCT_ID,
@@ -1681,50 +2841,52 @@ BEGIN
         V_STORES_STATISTICS_REC.PRODUCT_BARCODE		:= REC.PRODUCT_BARCODE   ;
         V_STORES_STATISTICS_REC.PRODUCT_NAME_AR	:= REC.PRODUCT_NAME_AR ;
         V_STORES_STATISTICS_REC.PRODUCT_NAME_EN	:= REC.PRODUCT_NAME_EN ;
+		V_STORES_STATISTICS_REC.STORE_NAME_AR	:= V_STORE_NAME_AR ;
+        V_STORES_STATISTICS_REC.STORE_NAME_EN	:= V_STORE_NAME_EN ;
         SELECT V_STORES_STATISTICS_REC.BAL+NVL(SUM(QUANTITY),0),NVL(SUM(QUANTITY),0),NVL(SUM(TOTAL_AMOUNT),0)
         INTO V_STORES_STATISTICS_REC.BAL,V_QUANTITY,V_COST
         FROM SALES_PURCHASE_INV_DTL D JOIN SALES_PURCHASE_INV I ON I.INVOICE_ID  = D.INVOICE_ID
-        WHERE I.STORE_ID = P_STORE_ID AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY');
+        WHERE I.COMPANY_ID = P_COM_ID AND (I.STORE_ID = P_STORE_ID OR P_STORE_ID=0) AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  (P_DATE IS NULL OR (P_DATE IS NOT NULL AND INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY')));
 
         SELECT V_STORES_STATISTICS_REC.BAL+NVL(SUM(QUANTITY),0)
         INTO V_STORES_STATISTICS_REC.BAL
         FROM SALES_RETURN_INV_DTL D JOIN SALES_RETURN_INV I ON I.INVOICE_ID  = D.INVOICE_ID
-        WHERE I.STORE_ID = P_STORE_ID AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY');
+        WHERE I.COMPANY_ID = P_COM_ID AND (I.STORE_ID = P_STORE_ID OR P_STORE_ID=0) AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  (P_DATE IS NULL OR (P_DATE IS NOT NULL AND INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY')));
 
         SELECT V_STORES_STATISTICS_REC.BAL+NVL(SUM(QUANTITY),0)
         INTO V_STORES_STATISTICS_REC.BAL
         FROM STORE_STOCKIN_ORDER_DTL D JOIN STORE_STOCKIN_ORDER I ON I.ORDER_ID  = D.ORDER_ID
-        WHERE I.STORE_ID = P_STORE_ID AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  ORDER_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY');
+        WHERE I.COMPANY_ID = P_COM_ID AND (I.STORE_ID = P_STORE_ID  OR P_STORE_ID=0) AND  D.PRODUCT_ID = REC.PRODUCT_ID AND (P_DATE IS NULL OR (P_DATE IS NOT NULL AND ORDER_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY')));
 
         SELECT V_STORES_STATISTICS_REC.BAL+NVL(SUM(QUANTITY),0)
         INTO V_STORES_STATISTICS_REC.BAL
         FROM STORE_FIRST_PERIOD_STOCK_DTL D JOIN STORE_FIRST_PERIOD_STOCK I ON I.INVOICE_ID  = D.INVOICE_ID
-        WHERE I.STORE_ID = P_STORE_ID AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY');
+        WHERE I.COMPANY_ID = P_COM_ID AND (I.STORE_ID = P_STORE_ID OR P_STORE_ID=0) AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  (P_DATE IS NULL OR (P_DATE IS NOT NULL AND INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY')));
 
         SELECT V_STORES_STATISTICS_REC.BAL+NVL(SUM(QUANTITY),0)
         INTO V_STORES_STATISTICS_REC.BAL
         FROM STORE_TRANSFER_DTL D JOIN STORE_TRANSFER I ON I.TRANSFER_ID  = D.TRANSFER_ID
-        WHERE I.TO_STORE_ID = P_STORE_ID AND  HAS_RECEIVED = 1 AND D.PRODUCT_ID = REC.PRODUCT_ID AND  TRANSFER_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY');
+        WHERE I.COMPANY_ID = P_COM_ID AND (I.TO_STORE_ID = P_STORE_ID OR P_STORE_ID=0) AND  HAS_RECEIVED = 1 AND D.PRODUCT_ID = REC.PRODUCT_ID AND (P_DATE IS NULL OR (P_DATE IS NOT NULL AND TRANSFER_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY')));
 
         SELECT V_STORES_STATISTICS_REC.BAL-NVL(SUM(QUANTITY),0),V_QUANTITY-NVL(SUM(QUANTITY),0),V_COST-NVL(SUM(TOTAL_AMOUNT),0)
         INTO V_STORES_STATISTICS_REC.BAL,V_QUANTITY,V_COST
         FROM SALES_PUR_RETURN_INV_DTL D JOIN SALES_PUR_RETURN_INV I ON I.INVOICE_ID  = D.INVOICE_ID
-        WHERE I.STORE_ID = P_STORE_ID AND D.PRODUCT_ID = REC.PRODUCT_ID AND  INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY');
+        WHERE I.COMPANY_ID = P_COM_ID AND (I.STORE_ID = P_STORE_ID OR P_STORE_ID=0) AND D.PRODUCT_ID = REC.PRODUCT_ID AND  (P_DATE IS NULL OR (P_DATE IS NOT NULL AND INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY')));
 
         SELECT V_STORES_STATISTICS_REC.BAL-NVL(SUM(QUANTITY),0)
         INTO V_STORES_STATISTICS_REC.BAL
         FROM SALES_INV_DTL D JOIN SALES_INV I ON I.INVOICE_ID  = D.INVOICE_ID
-        WHERE I.STORE_ID = P_STORE_ID AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY');
+        WHERE I.COMPANY_ID = P_COM_ID AND (I.STORE_ID = P_STORE_ID OR P_STORE_ID=0) AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  (P_DATE IS NULL OR (P_DATE IS NOT NULL AND INVOICE_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY')));
 
         SELECT V_STORES_STATISTICS_REC.BAL-NVL(SUM(QUANTITY),0)
         INTO V_STORES_STATISTICS_REC.BAL
         FROM STORE_STOCKOUT_ORDER_DTL D JOIN STORE_STOCKOUT_ORDER I ON I.ORDER_ID  = D.ORDER_ID
-        WHERE I.STORE_ID = P_STORE_ID AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  ORDER_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY');
+        WHERE I.COMPANY_ID = P_COM_ID AND (I.STORE_ID = P_STORE_ID OR P_STORE_ID=0) AND  D.PRODUCT_ID = REC.PRODUCT_ID AND  (P_DATE IS NULL OR (P_DATE IS NOT NULL AND ORDER_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY')));
 
         SELECT V_STORES_STATISTICS_REC.BAL-NVL(SUM(QUANTITY),0)
         INTO V_STORES_STATISTICS_REC.BAL
         FROM STORE_TRANSFER_DTL D JOIN STORE_TRANSFER I ON I.TRANSFER_ID  = D.TRANSFER_ID
-        WHERE I.FROM_STORE_ID = P_STORE_ID AND  HAS_RECEIVED = 1 AND D.PRODUCT_ID = REC.PRODUCT_ID AND  TRANSFER_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY');
+        WHERE I.COMPANY_ID = P_COM_ID AND (I.FROM_STORE_ID = P_STORE_ID OR P_STORE_ID=0) AND  HAS_RECEIVED = 1 AND D.PRODUCT_ID = REC.PRODUCT_ID AND  (P_DATE IS NULL OR (P_DATE IS NOT NULL AND TRANSFER_DATE<= TO_DATE(P_DATE,'DD-MM-YYYY')));
 
         SELECT ROUND(V_COST/DECODE(V_QUANTITY,0,1,V_QUANTITY),5)
         INTO V_STORES_STATISTICS_REC.COST_AVG
@@ -1738,6 +2900,181 @@ BEGIN
     RETURN V_STORES_STATISTICS_TBL;
 END STORES_STATISTICS_R;
 
+/
+--------------------------------------------------------
+--  DDL for Function TAX_RETURN_R
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "TAX_RETURN_R" (
+    P_FROM_DATE    VARCHAR2,
+    P_TO_DATE      VARCHAR2,
+    P_COMPANY_ID   NUMBER,
+    P_COST_CTR_ID  NUMBER DEFAULT 0,
+    P_BRANCH_ID    NUMBER DEFAULT 0
+) RETURN TAX_RETURN_TBL AS 
+    V_TAX_RETURN_REC TAX_RETURN_REC := TAX_RETURN_REC (
+    COST_CTR_NAME_AR                     => NULL,
+    COST_CTR_NAME_EN                     => NULL,
+    BRANCH_NAME_AR                       => NULL,
+    BRANCH_NAME_EN                       => NULL,
+    AMOUNT_OF_SALES_UNDER_VAT            => NULL,
+    VAT_OF_SALES_UNDER_VAT               => NULL,
+    AMOUNT_OF_SALES_WITH_ZERO_VAT        => NULL,
+    AMOUNT_OF_SALES_WITH_VAT_EXEMPT      => NULL,
+    AMOUNT_OF_PURCHASES_UNDER_VAT        => NULL,
+    VAT_OF_PURCHASES_UNDER_VAT           => NULL,
+    AMOUNT_OF_PURCHASES_WITH_ZERO_VAT    => NULL,
+    AMOUNT_OF_PURCHASES_WITH_VAT_EXEMPT  => NULL,
+    OPERATIONAL_EXPENSES                 => NULL,
+    OPERATIONAL_EXPENSES_VAT             => NULL
+    );
+    V_TAX_RETURN_TBL TAX_RETURN_TBL := TAX_RETURN_TBL();
+    V_INDEX NUMBER := 0;
+BEGIN
+    SELECT
+        NVL(SUM(POST_DISCOUNT_TOTAL_PRICE),0)     PRE_TAX_INV_SUM,
+        NVL(SUM(VAT_VALUE),0)                     VAT_SUM
+    INTO
+        V_TAX_RETURN_REC.AMOUNT_OF_SALES_UNDER_VAT,
+        V_TAX_RETURN_REC.VAT_OF_SALES_UNDER_VAT
+    FROM
+        SALES_INV I JOIN SALES_INV_DTL DTL ON I.INVOICE_ID =  DTL.INVOICE_ID
+    WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) 
+    AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+    AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+    AND DTL.PRODUCT_ID IN 
+        (
+            SELECT PRODUCT_ID FROM SALES_PRODUCT 
+            WHERE TAX_GROUP_ID IN 
+            (
+                SELECT PARAM_VALUE 
+                FROM SETUP_PARAMS 
+                WHERE PARAM_ID = 6 AND COMPANY_ID = P_COMPANY_ID
+            )
+        );
+    SELECT
+        NVL(SUM(POST_DISCOUNT_TOTAL_PRICE),0)     PRE_TAX_INV_SUM       
+    INTO
+        V_TAX_RETURN_REC.AMOUNT_OF_SALES_WITH_ZERO_VAT
+    FROM
+        SALES_INV I JOIN SALES_INV_DTL DTL ON I.INVOICE_ID =  DTL.INVOICE_ID
+    WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) 
+    AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+    AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+    AND DTL.PRODUCT_ID IN 
+        (
+            SELECT PRODUCT_ID FROM SALES_PRODUCT 
+            WHERE TAX_GROUP_ID IN 
+            (
+                SELECT PARAM_VALUE 
+                FROM SETUP_PARAMS 
+                WHERE PARAM_ID = 7 AND COMPANY_ID = P_COMPANY_ID
+            )
+        );
+    SELECT
+        NVL(SUM(POST_DISCOUNT_TOTAL_PRICE),0)     PRE_TAX_INV_SUM      
+    INTO
+        V_TAX_RETURN_REC.AMOUNT_OF_SALES_WITH_VAT_EXEMPT
+    FROM
+        SALES_INV I JOIN SALES_INV_DTL DTL ON I.INVOICE_ID =  DTL.INVOICE_ID
+    WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) 
+    AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+    AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+    AND DTL.PRODUCT_ID IN 
+        (
+            SELECT PRODUCT_ID FROM SALES_PRODUCT 
+            WHERE TAX_GROUP_ID IN 
+            (
+                SELECT PARAM_VALUE 
+                FROM SETUP_PARAMS 
+                WHERE PARAM_ID = 8 AND COMPANY_ID = P_COMPANY_ID
+            )
+        );
+
+    --------------------------------------------------------
+    SELECT
+        NVL(SUM(POST_DISCOUNT_TOTAL_PRICE),0)     PRE_TAX_INV_SUM,
+        NVL(SUM(VAT_VALUE),0)                     VAT_SUM
+    INTO
+        V_TAX_RETURN_REC.AMOUNT_OF_PURCHASES_UNDER_VAT,
+        V_TAX_RETURN_REC.VAT_OF_PURCHASES_UNDER_VAT
+    FROM
+        SALES_PURCHASE_INV I JOIN SALES_PURCHASE_INV_DTL DTL ON I.INVOICE_ID =  DTL.INVOICE_ID
+    WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) 
+    AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+    AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+    AND DTL.PRODUCT_ID IN 
+        (
+            SELECT PRODUCT_ID FROM SALES_PRODUCT 
+            WHERE TAX_GROUP_ID IN 
+            (
+                SELECT PARAM_VALUE 
+                FROM SETUP_PARAMS 
+                WHERE PARAM_ID = 6 AND COMPANY_ID = P_COMPANY_ID
+            )
+        );
+    SELECT
+        NVL(SUM(POST_DISCOUNT_TOTAL_PRICE),0)     PRE_TAX_INV_SUM       
+    INTO
+        V_TAX_RETURN_REC.AMOUNT_OF_PURCHASES_WITH_ZERO_VAT
+    FROM
+        SALES_PURCHASE_INV I JOIN SALES_PURCHASE_INV_DTL DTL ON I.INVOICE_ID =  DTL.INVOICE_ID
+    WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) 
+    AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+    AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+    AND DTL.PRODUCT_ID IN 
+        (
+            SELECT PRODUCT_ID FROM SALES_PRODUCT 
+            WHERE TAX_GROUP_ID IN 
+            (
+                SELECT PARAM_VALUE 
+                FROM SETUP_PARAMS 
+                WHERE PARAM_ID = 7 AND COMPANY_ID = P_COMPANY_ID
+            )
+        );
+    SELECT
+        NVL(SUM(POST_DISCOUNT_TOTAL_PRICE),0)     PRE_TAX_INV_SUM      
+    INTO
+        V_TAX_RETURN_REC.AMOUNT_OF_PURCHASES_WITH_VAT_EXEMPT
+    FROM
+        SALES_PURCHASE_INV I JOIN SALES_PURCHASE_INV_DTL DTL ON I.INVOICE_ID =  DTL.INVOICE_ID
+    WHERE I.COMPANY_ID = P_COMPANY_ID AND (I.BRANCH_ID= P_BRANCH_ID OR P_BRANCH_ID = 0) 
+    AND INVOICE_DATE>= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') 
+    AND INVOICE_DATE<= TO_DATE(P_TO_DATE,'DD-MM-YYYY')
+    AND DTL.PRODUCT_ID IN 
+        (
+            SELECT PRODUCT_ID FROM SALES_PRODUCT 
+            WHERE TAX_GROUP_ID IN 
+            (
+                SELECT PARAM_VALUE 
+                FROM SETUP_PARAMS 
+                WHERE PARAM_ID = 8 AND COMPANY_ID = P_COMPANY_ID
+            )
+        );
+
+    SELECT 
+        100,15
+    INTO 
+        V_TAX_RETURN_REC.OPERATIONAL_EXPENSES,
+        V_TAX_RETURN_REC.OPERATIONAL_EXPENSES_VAT
+    FROM DUAL;
+
+    SELECT 
+        NVL((SELECT NAME_EN  FROM SETUP_BRANCH WHERE BRANCH_ID = P_BRANCH_ID),'All') BRANCH_NAME_EN,
+        NVL((SELECT NAME_AR  FROM SETUP_BRANCH WHERE BRANCH_ID = P_BRANCH_ID),'الكل') BRANCH_NAME_AR,
+        NVL((SELECT COST_CTR_NAME_EN  FROM ACC_COST_CENTER  WHERE COST_CTR_ID = P_COST_CTR_ID),'All') COST_CTR_NAME_EN,
+        NVL((SELECT COST_CTR_NAME_AR  FROM ACC_COST_CENTER WHERE COST_CTR_ID = P_COST_CTR_ID),'الكل') COST_CTR_NAME_AR
+    INTO 
+        V_TAX_RETURN_REC.BRANCH_NAME_EN,
+        V_TAX_RETURN_REC.BRANCH_NAME_AR,
+        V_TAX_RETURN_REC.COST_CTR_NAME_EN,
+        V_TAX_RETURN_REC.COST_CTR_NAME_AR
+    FROM DUAL;
+
+    V_TAX_RETURN_TBL.EXTEND;
+    V_TAX_RETURN_TBL(1) := V_TAX_RETURN_REC;
+    RETURN V_TAX_RETURN_TBL;
+END TAX_RETURN_R;
 
 /
 --------------------------------------------------------
@@ -1745,9 +3082,11 @@ END STORES_STATISTICS_R;
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE FUNCTION "TRAIL_BALANCE" (
+    P_COMPANY_ID   NUMBER,
     P_FROM_DATE       NVARCHAR2,
     P_TO_DATE         NVARCHAR2,
-    P_WITH_MAIN_ACCS  NUMBER DEFAULT 0
+    P_WITH_MAIN_ACCS  NUMBER DEFAULT 0,
+    P_COST_CNTR_ID   NUMBER DEFAULT 0
 ) RETURN TB_TABLE AS 
 
     V_TB_REC TB_REC;
@@ -1765,7 +3104,7 @@ BEGIN
         SUM(nvl(DEBIT,0)) PRE_DEBIT,
         SUM(nvl(CREDIT,0)) PRE_CREDIT
         from acc_ledger
-        WHERE JOURNAL_DATE < TO_DATE(P_FROM_DATE,'DD-MM-YYYY')
+        WHERE COMPANY_ID = P_COMPANY_ID and (COST_CNTR_ID=P_COST_CNTR_ID or P_COST_CNTR_ID=0)and JOURNAL_DATE < TO_DATE(P_FROM_DATE,'DD-MM-YYYY')
         GROUP BY ACCOUNT_ID
         ),
         in_period as (
@@ -1774,12 +3113,13 @@ BEGIN
         SUM(nvl(DEBIT,0)) IN_DEBIT,
         SUM(nvl(CREDIT,0)) IN_CREDIT
          from acc_ledger
-         WHERE JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
+         WHERE COMPANY_ID = P_COMPANY_ID and (COST_CNTR_ID=P_COST_CNTR_ID or P_COST_CNTR_ID=0) and JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
          GROUP BY ACCOUNT_ID
         )
         select 
         ACC.ACCOUNT_ID,
         account_name_ar,
+        ACCOUNT_NAME_EN,
         ACCOUNT_PARENT,
         nvl(PRE_DEBIT,0) PRE_DEBIT,
         nvl(PRE_CREDIT,0) PRE_CREDIT,
@@ -1792,6 +3132,7 @@ BEGIN
         full outer JOIN in_period ON 
         acc.ACCOUNT_ID = in_period.ACCOUNT_ID
         where ACC.SUB_ACCOUNT = 1
+        and acc.COMPANY_ID = P_COMPANY_ID
         order by acc.ACCOUNT_ID
     )
     LOOP
@@ -1800,7 +3141,8 @@ BEGIN
         V_TB_TABLE(V_INDEX) :=  TB_REC(
             ACCOUNT_ID => REC.ACCOUNT_ID,
             ACCOUNT_PARENT => REC.ACCOUNT_PARENT,
-            ACCOUNT_NAME => REC.account_name_ar,
+                ACCOUNT_NAME_AR => REC.account_name_ar,
+                ACCOUNT_NAME_EN => REC.ACCOUNT_NAME_EN,
             PRE_DEBIT => REC.PRE_DEBIT,
             PRE_CREDIT => REC.PRE_CREDIT,
             IN_DEBIT => REC.IN_DEBIT,
@@ -1817,6 +3159,7 @@ BEGIN
             select 
             ACC.ACCOUNT_ID,
             ACC.account_name_ar,
+            ACC.account_name_EN,
             ACC.ACCOUNT_PARENT,
              PRE_DEBIT,
              PRE_CREDIT,
@@ -1838,11 +3181,13 @@ BEGIN
             group by ACCOUNT_PARENT) TB 
             JOIN ACC_ACCOUNTS ACC
             ON TB.ACCOUNT_ID  = ACC.ACCOUNT_ID
+            
         )LOOP
             V_TB_REC := TB_REC(
                 ACCOUNT_ID => REC.ACCOUNT_ID,
                 ACCOUNT_PARENT => REC.ACCOUNT_PARENT,
-                ACCOUNT_NAME => REC.account_name_ar,
+                ACCOUNT_NAME_AR => REC.account_name_ar,
+                ACCOUNT_NAME_EN => REC.ACCOUNT_NAME_EN,
                 PRE_DEBIT => REC.PRE_DEBIT,
                 PRE_CREDIT => REC.PRE_CREDIT,
                 IN_DEBIT => REC.IN_DEBIT,
@@ -1867,6 +3212,5 @@ BEGIN
 
     RETURN V_TB_TABLE;
 END TRAIL_BALANCE;
-
 
 /
