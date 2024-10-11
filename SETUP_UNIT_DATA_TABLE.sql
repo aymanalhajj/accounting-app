@@ -1,5 +1,0 @@
-REM INSERTING into SETUP_UNIT
-SET DEFINE OFF;
-Insert into SETUP_UNIT (UNIT_ID,UNIT_NAME_AR,COMPANY_ID,UNIT_NAME_EN) values (1,'حبة',0,'Item');
-Insert into SETUP_UNIT (UNIT_ID,UNIT_NAME_AR,COMPANY_ID,UNIT_NAME_EN) values (2,'درزن',0,'dozen');
-Insert into SETUP_UNIT (UNIT_ID,UNIT_NAME_AR,COMPANY_ID,UNIT_NAME_EN) values (3,'كرتون',0,'box');
