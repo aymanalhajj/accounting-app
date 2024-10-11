@@ -29,6 +29,26 @@ END ACC_ACCOUNTS_TAPI;
 
 /
 --------------------------------------------------------
+--  DDL for Package ACC_ACCOUNTS_XAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE "ACC_ACCOUNTS_XAPI" IS
+   FUNCTION GET_ACCOUNT_NO(
+      P_COMPANY_ID   IN NUMBER,
+      P_PARENT_ID  IN NUMBER
+       )RETURN NUMBER;
+
+ PROCEDURE ADD_CLIENT_ACCOUNT(
+     P_CLIENT_ID  NUMBER
+   );
+
+ PROCEDURE ADD_PROVIDER_ACCOUNT(
+     P_PROVIDER_ID  NUMBER
+   );
+END ACC_ACCOUNTS_XAPI;
+
+/
+--------------------------------------------------------
 --  DDL for Package ACC_JOURNAL_DTL_TAPI
 --------------------------------------------------------
 

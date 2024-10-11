@@ -47,6 +47,12 @@
   CREATE UNIQUE INDEX "ACC_LEDGER_PK" ON "ACC_LEDGER" ("LEDGER_ID") 
   ;
 --------------------------------------------------------
+--  DDL for Index ACC_SETUP_PK
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "ACC_SETUP_PK" ON "ACC_SETUP" ("ID") 
+  ;
+--------------------------------------------------------
 --  DDL for Index ACL_SAFE_PK
 --------------------------------------------------------
 
@@ -405,6 +411,12 @@
 --------------------------------------------------------
 
   CREATE UNIQUE INDEX "ACC_LEDGER_PK" ON "ACC_LEDGER" ("LEDGER_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index ACC_SETUP_PK
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "ACC_SETUP_PK" ON "ACC_SETUP" ("ID") 
   ;
 --------------------------------------------------------
 --  DDL for Index ACC_JOURNAL_PK

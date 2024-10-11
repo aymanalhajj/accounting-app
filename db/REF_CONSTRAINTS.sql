@@ -35,6 +35,12 @@
   ALTER TABLE "ACC_LEDGER" ADD CONSTRAINT "ACC_LEDGER_COMPANY_FK" FOREIGN KEY ("COMPANY_ID")
 	  REFERENCES "ADMIN_COMPANY" ("COMPANY_ID") ENABLE;
 --------------------------------------------------------
+--  Ref Constraints for Table ACC_SETUP
+--------------------------------------------------------
+
+  ALTER TABLE "ACC_SETUP" ADD CONSTRAINT "ACC_SETUP_COMPANY_FK" FOREIGN KEY ("COMPANY_ID")
+	  REFERENCES "ADMIN_COMPANY" ("COMPANY_ID") ENABLE;
+--------------------------------------------------------
 --  Ref Constraints for Table ACC_VOUCHER
 --------------------------------------------------------
 

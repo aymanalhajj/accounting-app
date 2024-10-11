@@ -18,6 +18,32 @@
 
 /
 --------------------------------------------------------
+--  DDL for Type BAL_BANK_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "BAL_BANK_REC" AS OBJECT (
+			ACCOUNT_ID          NUMBER,
+			ACCOUNT_NAME_AR    NVARCHAR2(200),
+			ACCOUNT_NAME_EN    NVARCHAR2(200),
+			MAIN_BANK_NAME_AR  NVARCHAR2(200),
+			MAIN_BANK_NAME_EN  NVARCHAR2(200),
+			BANK_NAME_AR       NVARCHAR2(200),
+			BANK_NAME_EN       NVARCHAR2(200),
+			DEBIT_BAL        NUMBER,
+			CREDIT_BAL       NUMBER,
+			BAL              NUMBER,
+			BAL_NATURE       NUMBER
+       );
+
+/
+--------------------------------------------------------
+--  DDL for Type BAL_BANK_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "BAL_BANK_TBL" AS TABLE OF BAL_BANK_REC;
+
+/
+--------------------------------------------------------
 --  DDL for Type BAL_REC
 --------------------------------------------------------
 
@@ -31,6 +57,33 @@
     BAL              NUMBER,
     BAL_NATURE       NUMBER
 );
+
+/
+--------------------------------------------------------
+--  DDL for Type BAL_SAFE_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "BAL_SAFE_REC" AS OBJECT (
+			ACCOUNT_ID          NUMBER,
+			ACCOUNT_NAME_AR    NVARCHAR2(200),
+			ACCOUNT_NAME_EN    NVARCHAR2(200),
+			MAIN_SAFE_NAME_AR  NVARCHAR2(200),
+			MAIN_SAFE_NAME_EN  NVARCHAR2(200),
+			SAFE_NAME_AR       NVARCHAR2(200),
+			SAFE_NAME_EN       NVARCHAR2(200),
+			DEBIT_BAL        NUMBER,
+			CREDIT_BAL       NUMBER,
+			BAL              NUMBER,
+			BAL_NATURE       NUMBER
+       );
+
+
+/
+--------------------------------------------------------
+--  DDL for Type BAL_SAFE_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "BAL_SAFE_TBL" AS TABLE OF BAL_SAFE_REC;
 
 /
 --------------------------------------------------------
@@ -143,6 +196,40 @@
 
 /
 --------------------------------------------------------
+--  DDL for Type PRODUCT_MOVEMENTS_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "PRODUCT_MOVEMENTS_REC" AS OBJECT (
+    PRODUCT_NO       NUMBER,
+    PRODUCT_BARCODE  NUMBER,
+    PRODUCT_NAME_AR  VARCHAR2(200),
+    PRODUCT_NAME_EN  VARCHAR2(200),
+	MAIN_PRODUCT_NAME_AR    VARCHAR2(200),
+    MAIN_PRODUCT_NAME_EN    VARCHAR2(200),
+    BAL              NUMBER,
+    COST_AVG         NUMBER,
+    COST_TOTAL       NUMBER,
+	FIRST_PERIOD     NUMBER,
+	PURCHASE     NUMBER,
+	PUR_RETURN     NUMBER,
+	SALES     NUMBER,
+	SALES_RETURN     NUMBER,
+	STOCKIN     NUMBER,
+	STOCKOUT     NUMBER,
+	ADJUSTMENT  NUMBER
+);
+
+
+/
+--------------------------------------------------------
+--  DDL for Type PRODUCT_MOVEMENTS_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "PRODUCT_MOVEMENTS_TBL" AS
+    TABLE OF PRODUCT_MOVEMENTS_REC;
+
+/
+--------------------------------------------------------
 --  DDL for Type PURCHASES_PRODUCT_REC
 --------------------------------------------------------
 
@@ -166,6 +253,88 @@
   CREATE OR REPLACE EDITIONABLE TYPE "PURCHASES_PRODUCT_TBL" AS
     TABLE OF PURCHASES_PRODUCT_REC;
 
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_EMP_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_EMP_REC" IS OBJECT (
+	    TRANS_TYPE_AR                      VARCHAR2(50),
+        TRANS_TYPE_EN                      VARCHAR2(50),
+		INVOICE_DATE                       VARCHAR2(50),
+		INVOICE_NO                         NUMBER,
+		USER_ID                            NUMBER,
+		USER_NAME                          VARCHAR2(100),
+        PRODUCT_ID                         NUMBER,
+		PRODUCT_NO                         NUMBER,
+        PRODUCT_NAME_AR                    VARCHAR2(100),
+		PRODUCT_NAME_EN                    VARCHAR2(100),
+		BARCODE                            VARCHAR2(50),
+		QUANTITY                           NUMBER,
+		PRICE                              NUMBER,
+		TOTAL_AMOUNT                       NUMBER,
+		SALES_TOTAL                         NUMBER,
+		CASH_SALES_SUM                     NUMBER,
+		BANK_SALES_SUM                     NUMBER,
+		DEFERRED_SALES_SUM                 NUMBER,
+		TAX_SALES_SUM                      NUMBER,
+		SALES_RETURN_TOTAL                 NUMBER,
+		CASH_SALES_RETURN_SUM              NUMBER,
+		BANK_SALES_RETURN_SUM              NUMBER,
+		DEFERRED_SALES_RETURN_SUM          NUMBER,
+		TAX_SALES_RETURN_SUM               NUMBER
+    );
+
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_EMP_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_EMP_TBL" AS
+    TABLE OF SALES_EMP_REC;
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PURCHASES_CLIENT_REC
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASES_CLIENT_REC" IS OBJECT (
+	    TRANS_TYPE_AR                      VARCHAR2(50),
+        TRANS_TYPE_EN                      VARCHAR2(50),
+		INVOICE_DATE                       VARCHAR2(50),
+		INVOICE_NO                         NUMBER,
+		CLIENT_NAME_AR                     VARCHAR2(100),
+		CLIENT_NAME_EN                     VARCHAR2(100),
+        PRODUCT_ID                         NUMBER,
+		PRODUCT_NO                         NUMBER,
+        PRODUCT_NAME_AR                    VARCHAR2(100),
+		PRODUCT_NAME_EN                    VARCHAR2(100),
+		BARCODE                            VARCHAR2(50),
+		QUANTITY                           NUMBER,
+		PRICE                              NUMBER,
+		TOTAL_AMOUNT                       NUMBER,
+		SALES_TOTAL                         NUMBER,
+		CASH_SALES_SUM                     NUMBER,
+		BANK_SALES_SUM                     NUMBER,
+		DEFERRED_SALES_SUM                 NUMBER,
+		TAX_SALES_SUM                      NUMBER,
+		SALES_RETURN_TOTAL                 NUMBER,
+		CASH_SALES_RETURN_SUM              NUMBER,
+		BANK_SALES_RETURN_SUM              NUMBER,
+		DEFERRED_SALES_RETURN_SUM          NUMBER,
+		TAX_SALES_RETURN_SUM               NUMBER
+    );
+
+
+/
+--------------------------------------------------------
+--  DDL for Type SALES_PURCHASES_CLIENT_TBL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE TYPE "SALES_PURCHASES_CLIENT_TBL" AS
+    TABLE OF SALES_PURCHASES_CLIENT_REC;
 
 /
 --------------------------------------------------------
@@ -361,6 +530,8 @@
     PRODUCT_BARCODE  NUMBER,
     PRODUCT_NAME_AR  VARCHAR2(200),
     PRODUCT_NAME_EN  VARCHAR2(200),
+	STORE_NAME_AR  VARCHAR2(200),
+    STORE_NAME_EN  VARCHAR2(200),
     BAL              NUMBER,
     COST_AVG         NUMBER,
     COST_TOTAL       NUMBER
@@ -372,7 +543,6 @@
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE TYPE "STORES_STATISTICS_TBL" as table of STORES_STATISTICS_REC;
-
 
 /
 --------------------------------------------------------

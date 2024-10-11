@@ -46,6 +46,13 @@
   USING INDEX "ACC_LEDGER_PK"  ENABLE;
   ALTER TABLE "ACC_LEDGER" MODIFY ("COMPANY_ID" NOT NULL ENABLE);
 --------------------------------------------------------
+--  Constraints for Table ACC_SETUP
+--------------------------------------------------------
+
+  ALTER TABLE "ACC_SETUP" MODIFY ("ID" NOT NULL ENABLE);
+  ALTER TABLE "ACC_SETUP" ADD CONSTRAINT "ACC_SETUP_PK" PRIMARY KEY ("ID")
+  USING INDEX "ACC_SETUP_PK"  ENABLE;
+--------------------------------------------------------
 --  Constraints for Table ACC_VOUCHER
 --------------------------------------------------------
 
