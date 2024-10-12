@@ -546,6 +546,117 @@ END;
 
 /
 --------------------------------------------------------
+--  DDL for Function GET_PUR_RETURN_INVOICE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_PUR_RETURN_INVOICE" (
+    P_FIRST       VARCHAR2,
+    P_LAST        VARCHAR2,
+    P_NEXT        VARCHAR2,
+    P_PREV        VARCHAR2,
+    P_INVOICE_ID  VARCHAR2
+) RETURN CLOB AS
+    V_INVOICE_ID    NUMBER;
+    V_RESPONSE      CLOB;
+BEGIN
+    BEGIN
+        IF p_first = '1' THEN
+            SELECT MIN(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM SALES_PUR_RETURN_INV;
+        ELSIF p_last = '1' THEN
+            SELECT MAX(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM SALES_PUR_RETURN_INV;
+        ELSIF p_next = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM SALES_PUR_RETURN_INV
+            WHERE INVOICE_ID > p_invoice_id
+            ORDER BY INVOICE_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF p_prev = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM SALES_PUR_RETURN_INV
+            WHERE INVOICE_ID < p_invoice_id
+            ORDER BY INVOICE_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_INVOICE_ID := p_invoice_id;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'invoice_id' IS INVOICE_ID,
+                            'bank_acc_id' IS BANK_ACC_ID,
+                            'paid_amount' IS PAID_AMOUNT,
+                            'safe_id' IS SAFE_ID,
+                            'post_discount_total_amount' IS POST_DISCOUNT_TOTAL_AMOUNT,
+                            'user_id' IS USER_ID,
+                            'provider_id' IS PROVIDER_ID,
+                            'total_discount' IS TOTAL_DISCOUNT,
+                            'invoice_date' IS INVOICE_DATE,
+                            'notes' IS NOTES,
+                            'invoice_total_amount' IS INVOICE_TOTAL_AMOUNT,
+                            'invoice_type' IS INVOICE_TYPE,
+                            'total_quantity' IS TOTAL_QUANTITY,
+                            'store_id' IS STORE_ID,
+                            'pre_tax_total_amount' IS PRE_TAX_TOTAL_AMOUNT,
+                            'company_id' IS COMPANY_ID,
+                            'paid_bank_amount' IS PAID_BANK_AMOUNT,
+                            'cost_ctr_id' IS COST_CTR_ID,
+                            'client_discount' IS CLIENT_DISCOUNT,
+                            'invoice_no' IS INVOICE_NO,
+                            'total_vat' IS TOTAL_VAT,
+                            'provider_inv_id' IS PROVIDER_INV_ID,
+                            'payment_type' IS PAYMENT_TYPE,
+                            'deferred_amount' IS DEFERRED_AMOUNT,
+                            'provider_inv_date' IS PROVIDER_INV_DATE,
+                            'store_date' IS STORE_DATE,
+                            'paid_cash_amount' IS PAID_CASH_AMOUNT,
+                            'branch_id' IS BRANCH_ID,
+                            'items' IS (
+                                            SELECT JSON_ARRAYAGG
+                                                       ( JSON_OBJECT( 
+                                                            KEY 'dtl_id' VALUE dtl_id,
+                                                            KEY 'product_id' VALUE product_id,
+                                                            KEY 'barcode' VALUE
+                                                            (
+                                                                SELECT BARCODE FROM SALES_PRODUCT 
+                                                                where PRODUCT_ID  = dtl.product_id
+                                                            ),
+                                                            KEY 'unit_id' VALUE product_unit_id,
+                                                            KEY 'quantity' VALUE quantity,
+                                                            KEY 'base_price' VALUE price,
+                                                            KEY 'total_price' VALUE total_price,
+                                                            KEY 'discount_percentage' VALUE discount_percentage,
+                                                            KEY 'discount_value' VALUE discount_value,
+                                                            KEY 'post_discount_total_price' VALUE post_discount_total_price,
+                                                            KEY 'vat_percentage' VALUE vat_percentage,
+                                                            KEY 'vat_value' VALUE vat_value,
+                                                            KEY 'total_amount' VALUE total_amount,
+                                                            KEY 'pre_discount_vat_value' VALUE pre_discount_vat_value
+                                                                    RETURNING CLOB
+                                                                    )
+                                                                    RETURNING CLOB
+                                                      )
+                                            FROM SALES_PUR_RETURN_INV_dtl dtl WHERE invoice_id = INV.invoice_id
+                                        )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM SALES_PUR_RETURN_INV INV
+        WHERE INVOICE_ID = V_INVOICE_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            return NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
 --  DDL for Function GET_QR_CODE
 --------------------------------------------------------
 
@@ -619,6 +730,224 @@ BEGIN
     RETURN P_QR;    
 END;
 
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_SALE_INVOICE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_SALE_INVOICE" (
+    P_FIRST       VARCHAR2,
+    P_LAST        VARCHAR2,
+    P_NEXT        VARCHAR2,
+    P_PREV        VARCHAR2,
+    P_INVOICE_ID  VARCHAR2
+) RETURN CLOB AS
+    V_INVOICE_ID    NUMBER;
+    V_RESPONSE      CLOB;
+BEGIN
+    BEGIN
+        IF p_first = '1' THEN
+            SELECT MIN(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM SALES_INV;
+        ELSIF p_last = '1' THEN
+            SELECT MAX(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM SALES_INV;
+        ELSIF p_next = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM SALES_INV
+            WHERE INVOICE_ID > p_invoice_id
+            ORDER BY INVOICE_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF p_prev = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM SALES_INV
+            WHERE INVOICE_ID < p_invoice_id
+            ORDER BY INVOICE_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_INVOICE_ID := p_invoice_id;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'invoice_id' IS INVOICE_ID,
+                            'bank_acc_id' IS BANK_ACC_ID,
+                            'paid_amount' IS PAID_AMOUNT,
+                            'safe_id' IS SAFE_ID,
+                            'post_discount_total_amount' IS POST_DISCOUNT_TOTAL_AMOUNT,
+                            'user_id' IS USER_ID,
+                            'client_id' IS CLIENT_ID,
+                            'total_discount' IS TOTAL_DISCOUNT,
+                            'invoice_date' IS INVOICE_DATE,
+                            'notes' IS NOTES,
+                            'invoice_total_amount' IS INVOICE_TOTAL_AMOUNT,
+                            'invoice_type' IS INVOICE_TYPE,
+                            'total_quantity' IS TOTAL_QUANTITY,
+                            'store_id' IS STORE_ID,
+                            'pre_tax_total_amount' IS PRE_TAX_TOTAL_AMOUNT,
+                            'company_id' IS COMPANY_ID,
+                            'paid_bank_amount' IS PAID_BANK_AMOUNT,
+                            'cost_ctr_id' IS COST_CTR_ID,
+                            'client_discount' IS CLIENT_DISCOUNT,
+                            'invoice_no' IS INVOICE_NO,
+                            'total_vat' IS TOTAL_VAT,
+                            'payment_type' IS PAYMENT_TYPE,
+                            'deferred_amount' IS DEFERRED_AMOUNT,
+                            'store_date' IS STORE_DATE,
+                            'paid_cash_amount' IS PAID_CASH_AMOUNT,
+                            'branch_id' IS BRANCH_ID,
+                            'items' IS (
+                                            SELECT JSON_ARRAYAGG
+                                                       ( JSON_OBJECT( 
+                                                            KEY 'dtl_id' VALUE invoice_dtl_id,
+                                                            KEY 'product_id' VALUE product_id,
+                                                            KEY 'barcode' VALUE
+                                                            (
+                                                                SELECT BARCODE FROM SALES_PRODUCT 
+                                                                where PRODUCT_ID  = dtl.product_id
+                                                            ),
+                                                            KEY 'unit_id' VALUE product_unit_id,
+                                                            KEY 'quantity' VALUE quantity,
+                                                            KEY 'base_price' VALUE price,
+                                                            KEY 'total_price' VALUE total_price,
+                                                            KEY 'discount_percentage' VALUE discount_percentage,
+                                                            KEY 'discount_value' VALUE discount_value,
+                                                            KEY 'post_discount_total_price' VALUE post_discount_total_price,
+                                                            KEY 'vat_percentage' VALUE vat_percentage,
+                                                            KEY 'vat_value' VALUE vat_value,
+                                                            KEY 'total_amount' VALUE total_amount,
+                                                            KEY 'pre_discount_vat_value' VALUE pre_discount_vat_value
+                                                                    RETURNING CLOB
+                                                                    )
+                                                                    RETURNING CLOB
+                                                      )
+                                            FROM sales_inv_dtl dtl WHERE invoice_id = INV.invoice_id
+                                        )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM SALES_INV INV
+        WHERE INVOICE_ID = V_INVOICE_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            return NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_SALE_RETURN_INVOICE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_SALE_RETURN_INVOICE" (
+    P_FIRST       VARCHAR2,
+    P_LAST        VARCHAR2,
+    P_NEXT        VARCHAR2,
+    P_PREV        VARCHAR2,
+    P_INVOICE_ID  VARCHAR2
+) RETURN CLOB AS
+    V_INVOICE_ID    NUMBER;
+    V_RESPONSE      CLOB;
+BEGIN
+    BEGIN
+        IF p_first = '1' THEN
+            SELECT MIN(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM SALES_RETURN_INV;
+        ELSIF p_last = '1' THEN
+            SELECT MAX(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM SALES_RETURN_INV;
+        ELSIF p_next = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM SALES_RETURN_INV
+            WHERE INVOICE_ID > p_invoice_id
+            ORDER BY INVOICE_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF p_prev = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM SALES_RETURN_INV
+            WHERE INVOICE_ID < p_invoice_id
+            ORDER BY INVOICE_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_INVOICE_ID := p_invoice_id;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'invoice_id' IS INVOICE_ID,
+                            'bank_acc_id' IS BANK_ACC_ID,
+                            'paid_amount' IS PAID_AMOUNT,
+                            'safe_id' IS SAFE_ID,
+                            'post_discount_total_amount' IS POST_DISCOUNT_TOTAL_AMOUNT,
+                            'user_id' IS USER_ID,
+                            'client_id' IS CLIENT_ID,
+                            'total_discount' IS TOTAL_DISCOUNT,
+                            'invoice_date' IS INVOICE_DATE,
+                            'notes' IS NOTES,
+                            'invoice_total_amount' IS INVOICE_TOTAL_AMOUNT,
+                            'invoice_type' IS INVOICE_TYPE,
+                            'total_quantity' IS TOTAL_QUANTITY,
+                            'store_id' IS STORE_ID,
+                            'pre_tax_total_amount' IS PRE_TAX_TOTAL_AMOUNT,
+                            'company_id' IS COMPANY_ID,
+                            'paid_bank_amount' IS PAID_BANK_AMOUNT,
+                            'cost_ctr_id' IS COST_CTR_ID,
+                            'client_discount' IS CLIENT_DISCOUNT,
+                            'invoice_no' IS INVOICE_NO,
+                            'total_vat' IS TOTAL_VAT,
+                            'payment_type' IS PAYMENT_TYPE,
+                            'deferred_amount' IS DEFERRED_AMOUNT,
+                            'store_date' IS STORE_DATE,
+                            'paid_cash_amount' IS PAID_CASH_AMOUNT,
+                            'branch_id' IS BRANCH_ID,
+                            'items' IS (
+                                            SELECT JSON_ARRAYAGG
+                                                       ( JSON_OBJECT( 
+                                                            KEY 'dtl_id' VALUE dtl_id,
+                                                            KEY 'product_id' VALUE product_id,
+                                                            KEY 'barcode' VALUE
+                                                            (
+                                                                SELECT BARCODE FROM SALES_PRODUCT 
+                                                                where PRODUCT_ID  = dtl.product_id
+                                                            ),
+                                                            KEY 'unit_id' VALUE product_unit_id,
+                                                            KEY 'quantity' VALUE quantity,
+                                                            KEY 'base_price' VALUE price,
+                                                            KEY 'total_price' VALUE total_price,
+                                                            KEY 'discount_percentage' VALUE discount_percentage,
+                                                            KEY 'discount_value' VALUE discount_value,
+                                                            KEY 'post_discount_total_price' VALUE post_discount_total_price,
+                                                            KEY 'vat_percentage' VALUE vat_percentage,
+                                                            KEY 'vat_value' VALUE vat_value,
+                                                            KEY 'total_amount' VALUE total_amount,
+                                                            KEY 'pre_discount_vat_value' VALUE pre_discount_vat_value
+                                                                    RETURNING CLOB
+                                                                    )
+                                                                    RETURNING CLOB
+                                                      )
+                                            FROM SALES_RETURN_INV_dtl dtl WHERE invoice_id = INV.invoice_id
+                                        )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM SALES_RETURN_INV INV
+        WHERE INVOICE_ID = V_INVOICE_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            return NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
 
 /
 --------------------------------------------------------

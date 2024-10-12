@@ -2333,7 +2333,7 @@ PROCEDURE SETUP_TAX_GROUP_VALIDATE (
         IF P_DATA.GET_STRING('client_id') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
-                "field_name":"Client_Id",
+                "field_name":"client_id",
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 24,P_LANG => P_LANG)||'"
             }'));
         END IF;
@@ -4328,8 +4328,7 @@ end SALES_INV_DTL_TAPI;
             PAYMENT_TYPE = P_PAYMENT_TYPE,
             DEFERRED_AMOUNT = P_DEFERRED_AMOUNT,
             STORE_DATE = P_STORE_DATE,
-            PAID_CASH_AMOUNT = P_PAID_CASH_AMOUNT,
-            INVOICE_NO=P_INVOICE_NO
+            PAID_CASH_AMOUNT = P_PAID_CASH_AMOUNT
         WHERE
             INVOICE_ID = P_INVOICE_ID;
 
@@ -4663,7 +4662,6 @@ END SALES_PURCHASE_INV_DTL_TAPI;
         P_BRANCH_ID                   IN  SALES_PURCHASE_INV.BRANCH_ID%TYPE DEFAULT NULL
     ) IS
     BEGIN
-        P_INVOICE_NO := NVL(P_INVOICE_NO,MAKE_NO.GET_PURCHASE_INV_NO(P_COMPANY_ID => P_COMPANY_ID,P_BRANCH_ID => P_BRANCH_ID));
         UPDATE SALES_PURCHASE_INV
         SET
             BANK_ACC_ID = P_BANK_ACC_ID,
@@ -4685,7 +4683,6 @@ END SALES_PURCHASE_INV_DTL_TAPI;
             PAID_BANK_AMOUNT = P_PAID_BANK_AMOUNT,
             COST_CTR_ID = P_COST_CTR_ID,
             CLIENT_DISCOUNT = P_CLIENT_DISCOUNT,
-            INVOICE_NO = P_INVOICE_NO,
             TOTAL_VAT = P_TOTAL_VAT,
             PROVIDER_INV_ID = P_PROVIDER_INV_ID,
             PAYMENT_TYPE = P_PAYMENT_TYPE,
@@ -5237,7 +5234,6 @@ END SALES_PUR_RETURN_INV_DTL_TAPI;
         P_PURCHASE_INV_ID             IN      SALES_PUR_RETURN_INV.PURCHASE_INV_ID%TYPE DEFAULT NULL
     ) IS
     BEGIN
-        P_INVOICE_NO := NVL(P_INVOICE_NO,MAKE_NO.GET_PUR_RETURN_INV_NO(P_COMPANY_ID => P_COMPANY_ID,P_BRANCH_ID => P_BRANCH_ID));
         UPDATE SALES_PUR_RETURN_INV
         SET
             BRANCH_ID = P_BRANCH_ID,
@@ -5259,7 +5255,6 @@ END SALES_PUR_RETURN_INV_DTL_TAPI;
             PAID_BANK_AMOUNT = P_PAID_BANK_AMOUNT,
             COST_CTR_ID = P_COST_CTR_ID,
             CLIENT_DISCOUNT = P_CLIENT_DISCOUNT,
-            INVOICE_NO = P_INVOICE_NO,
             TOTAL_VAT = P_TOTAL_VAT,
             PROVIDER_INV_ID = P_PROVIDER_INV_ID,
             PAYMENT_TYPE = P_PAYMENT_TYPE,
@@ -5840,8 +5835,7 @@ end SALES_RETURN_INV_DTL_TAPI;
             PAYMENT_TYPE = P_PAYMENT_TYPE,
             DEFERRED_AMOUNT = P_DEFERRED_AMOUNT,
             STORE_DATE = P_STORE_DATE,
-            PAID_CASH_AMOUNT = P_PAID_CASH_AMOUNT,
-            INVOICE_NO =P_INVOICE_NO
+            PAID_CASH_AMOUNT = P_PAID_CASH_AMOUNT
         WHERE
             INVOICE_ID = P_INVOICE_ID;
 
@@ -9583,12 +9577,12 @@ DBMS_OUTPUT.PUT_LINE(V_DEC);
  FETCH C_QR INTO V_QR;
  CLOSE C_QR;
 
-    v_blobqr := ZT_QR.f_bmp2jpg( 
-		ZT_QR.F_QR_AS_BMP(
-			p_data => V_QR,
-			p_error_correction => 'M'
-			, p_margines=> 'Y')
-		);
+--    v_blobqr := ZT_QR.f_bmp2jpg( 
+--		ZT_QR.F_QR_AS_BMP(
+--			p_data => V_QR,
+--			p_error_correction => 'M'
+--			, p_margines=> 'Y')
+--		);
 return v_blobqr;
 
  EXCEPTION WHEN NO_DATA_FOUND THEN 

@@ -1,5 +1,5 @@
 --------------------------------------------------------
---  File created - Friday-October-11-2024   
+--  File created - Saturday-October-12-2024   
 --------------------------------------------------------
 @D:\SmartCode\SmartRepos\accounting-app\db\TYPES.sql
 @D:\SmartCode\SmartRepos\accounting-app\db\SEQUENCES.sql
