@@ -435,6 +435,99 @@ END GET_ACC_BALANCE;
 
 /
 --------------------------------------------------------
+--  DDL for Function GET_FIRST_PERIOD_STOCK
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_FIRST_PERIOD_STOCK" (
+    P_FIRST       VARCHAR2,
+    P_LAST        VARCHAR2,
+    P_NEXT        VARCHAR2,
+    P_PREV        VARCHAR2,
+    P_INVOICE_ID  VARCHAR2
+) RETURN CLOB AS
+    V_INVOICE_ID    NUMBER;
+    V_RESPONSE      CLOB;
+BEGIN
+    BEGIN
+        IF p_first = '1' THEN
+            SELECT MIN(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM STORE_FIRST_PERIOD_STOCK;
+        ELSIF p_last = '1' THEN
+            SELECT MAX(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM STORE_FIRST_PERIOD_STOCK;
+        ELSIF p_next = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM STORE_FIRST_PERIOD_STOCK
+            WHERE INVOICE_ID > p_invoice_id
+            ORDER BY INVOICE_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF p_prev = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM STORE_FIRST_PERIOD_STOCK
+            WHERE INVOICE_ID < p_invoice_id
+            ORDER BY INVOICE_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_INVOICE_ID := p_invoice_id;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'invoice_id' IS INVOICE_ID,
+                            'safe_id' IS SAFE_ID,
+                            'user_id' IS USER_ID,
+                            'provider_id' IS PROVIDER_ID,
+                            'invoice_date' IS INVOICE_DATE,
+                            'notes' IS NOTES,
+                            'invoice_total_amount' IS INVOICE_TOTAL_AMOUNT,
+                            'invoice_type' IS INVOICE_TYPE,
+                            'total_quantity' IS TOTAL_QUANTITY,
+                            'store_id' IS STORE_ID,
+                            'company_id' IS COMPANY_ID,
+                            'cost_ctr_id' IS COST_CTR_ID,
+                            'invoice_no' IS INVOICE_NO,
+                            'provider_inv_id' IS PROVIDER_INV_ID,
+                            'provider_inv_date' IS PROVIDER_INV_DATE,
+                            'store_date' IS STORE_DATE,
+                            'branch_id' IS BRANCH_ID,
+                            'items' IS (
+                                            SELECT JSON_ARRAYAGG
+                                                       ( JSON_OBJECT( 
+                                                            KEY 'dtl_id' VALUE dtl_id,
+                                                            KEY 'product_id' VALUE product_id,
+                                                            KEY 'barcode' VALUE
+                                                            (
+                                                                SELECT BARCODE FROM SALES_PRODUCT 
+                                                                where PRODUCT_ID  = dtl.product_id
+                                                            ),
+                                                            KEY 'unit_id' VALUE product_unit_id,
+                                                            KEY 'quantity' VALUE quantity,
+                                                            KEY 'base_price' VALUE price,
+                                                            KEY 'total_amount' VALUE total_amount
+                                                                    RETURNING CLOB
+                                                                    )
+                                                                    RETURNING CLOB
+                                                      )
+                                            FROM STORE_FIRST_PERIOD_STOCK_dtl dtl WHERE invoice_id = INV.invoice_id
+                                        )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM STORE_FIRST_PERIOD_STOCK INV
+        WHERE INVOICE_ID = V_INVOICE_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            return NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
 --  DDL for Function GET_PURCHASE_INVOICE
 --------------------------------------------------------
 
@@ -536,6 +629,117 @@ BEGIN
         INTO V_RESPONSE
         FROM SALES_PURCHASE_INV INV
         WHERE INVOICE_ID = V_INVOICE_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            return NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_PURCHASE_ORDER
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_PURCHASE_ORDER" (
+    P_FIRST       VARCHAR2,
+    P_LAST        VARCHAR2,
+    P_NEXT        VARCHAR2,
+    P_PREV        VARCHAR2,
+    P_ORDER_ID  VARCHAR2
+) RETURN CLOB AS
+    V_ORDER_ID    NUMBER;
+    V_RESPONSE      CLOB;
+BEGIN
+    BEGIN
+        IF p_first = '1' THEN
+            SELECT MIN(ORDER_ID)
+            INTO V_ORDER_ID
+            FROM SALES_PURCHASE_ORDER;
+        ELSIF p_last = '1' THEN
+            SELECT MAX(ORDER_ID)
+            INTO V_ORDER_ID
+            FROM SALES_PURCHASE_ORDER;
+        ELSIF p_next = '1' THEN
+            SELECT ORDER_ID
+            INTO V_ORDER_ID
+            FROM SALES_PURCHASE_ORDER
+            WHERE ORDER_ID > p_ORDER_id
+            ORDER BY ORDER_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF p_prev = '1' THEN
+            SELECT ORDER_ID
+            INTO V_ORDER_ID
+            FROM SALES_PURCHASE_ORDER
+            WHERE ORDER_ID < p_ORDER_id
+            ORDER BY ORDER_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ORDER_ID := p_ORDER_id;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'order_id' IS ORDER_ID,
+                            'bank_acc_id' IS BANK_ACC_ID,
+                            'paid_amount' IS PAID_AMOUNT,
+                            'safe_id' IS SAFE_ID,
+                            'post_discount_total_amount' IS POST_DISCOUNT_TOTAL_AMOUNT,
+                            'user_id' IS USER_ID,
+                            'provider_id' IS PROVIDER_ID,
+                            'total_discount' IS TOTAL_DISCOUNT,
+                            'order_date' IS ORDER_DATE,
+                            'notes' IS NOTES,
+                            'invoice_total_amount' IS INVOICE_TOTAL_AMOUNT,
+                            'invoice_type' IS INVOICE_TYPE,
+                            'total_quantity' IS TOTAL_QUANTITY,
+                            'store_id' IS STORE_ID,
+                            'pre_tax_total_amount' IS PRE_TAX_TOTAL_AMOUNT,
+                            'company_id' IS COMPANY_ID,
+                            'paid_bank_amount' IS PAID_BANK_AMOUNT,
+                            'cost_ctr_id' IS COST_CTR_ID,
+                            'client_discount' IS CLIENT_DISCOUNT,
+                            'order_no' IS ORDER_NO,
+                            'total_vat' IS TOTAL_VAT,
+                            'provider_inv_id' IS PROVIDER_INV_ID,
+                            'payment_type' IS PAYMENT_TYPE,
+                            'deferred_amount' IS DEFERRED_AMOUNT,
+                            'provider_inv_date' IS PROVIDER_INV_DATE,
+                            'store_date' IS STORE_DATE,
+                            'paid_cash_amount' IS PAID_CASH_AMOUNT,
+                            'branch_id' IS BRANCH_ID,
+                            'items' IS (
+                                            SELECT JSON_ARRAYAGG
+                                                       ( JSON_OBJECT( 
+                                                            KEY 'dtl_id' VALUE dtl_id,
+                                                            KEY 'product_id' VALUE product_id,
+                                                            KEY 'barcode' VALUE
+                                                            (
+                                                                SELECT BARCODE FROM SALES_PRODUCT 
+                                                                where PRODUCT_ID  = dtl.product_id
+                                                            ),
+                                                            KEY 'unit_id' VALUE product_unit_id,
+                                                            KEY 'quantity' VALUE quantity,
+                                                            KEY 'base_price' VALUE price,
+                                                            KEY 'total_price' VALUE total_price,
+                                                            KEY 'discount_percentage' VALUE discount_percentage,
+                                                            KEY 'discount_value' VALUE discount_value,
+                                                            KEY 'post_discount_total_price' VALUE post_discount_total_price,
+                                                            KEY 'vat_percentage' VALUE vat_percentage,
+                                                            KEY 'vat_value' VALUE vat_value,
+                                                            KEY 'total_amount' VALUE total_amount,
+                                                            KEY 'pre_discount_vat_value' VALUE pre_discount_vat_value
+                                                                    RETURNING CLOB
+                                                                    )
+                                                                    RETURNING CLOB
+                                                      )
+                                            FROM SALES_PURCHASE_ORDER_dtl dtl WHERE order_id = INV.order_id
+                                        )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM SALES_PURCHASE_ORDER INV
+        WHERE ORDER_ID = V_ORDER_ID;
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             return NULL;
@@ -730,6 +934,115 @@ BEGIN
     RETURN P_QR;    
 END;
 
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_RENT_INVOICE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_RENT_INVOICE" (
+    P_FIRST       VARCHAR2,
+    P_LAST        VARCHAR2,
+    P_NEXT        VARCHAR2,
+    P_PREV        VARCHAR2,
+    P_INVOICE_ID  VARCHAR2
+) RETURN CLOB AS
+    V_INVOICE_ID    NUMBER;
+    V_RESPONSE      CLOB;
+BEGIN
+    BEGIN
+        IF p_first = '1' THEN
+            SELECT MIN(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM SALES_RENT_INV;
+        ELSIF p_last = '1' THEN
+            SELECT MAX(INVOICE_ID)
+            INTO V_INVOICE_ID
+            FROM SALES_RENT_INV;
+        ELSIF p_next = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM SALES_RENT_INV
+            WHERE INVOICE_ID > p_invoice_id
+            ORDER BY INVOICE_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF p_prev = '1' THEN
+            SELECT INVOICE_ID
+            INTO V_INVOICE_ID
+            FROM SALES_RENT_INV
+            WHERE INVOICE_ID < p_invoice_id
+            ORDER BY INVOICE_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_INVOICE_ID := p_invoice_id;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'invoice_id' IS INVOICE_ID,
+                            'bank_acc_id' IS BANK_ACC_ID,
+                            'paid_amount' IS PAID_AMOUNT,
+                            'safe_id' IS SAFE_ID,
+                            'post_discount_total_amount' IS POST_DISCOUNT_TOTAL_AMOUNT,
+                            'user_id' IS USER_ID,
+                            'client_id' IS CLIENT_ID,
+                            'total_discount' IS TOTAL_DISCOUNT,
+                            'invoice_date' IS INVOICE_DATE,
+                            'notes' IS NOTES,
+                            'invoice_total_amount' IS INVOICE_TOTAL_AMOUNT,
+                            'invoice_type' IS INVOICE_TYPE,
+                            'total_quantity' IS TOTAL_QUANTITY,
+                            'store_id' IS STORE_ID,
+                            'pre_tax_total_amount' IS PRE_TAX_TOTAL_AMOUNT,
+                            'company_id' IS COMPANY_ID,
+                            'paid_bank_amount' IS PAID_BANK_AMOUNT,
+                            'cost_ctr_id' IS COST_CTR_ID,
+                            'client_discount' IS CLIENT_DISCOUNT,
+                            'invoice_no' IS INVOICE_NO,
+                            'total_vat' IS TOTAL_VAT,
+                            'payment_type' IS PAYMENT_TYPE,
+                            'deferred_amount' IS DEFERRED_AMOUNT,
+                            'store_date' IS STORE_DATE,
+                            'paid_cash_amount' IS PAID_CASH_AMOUNT,
+                            'branch_id' IS BRANCH_ID,
+                            'items' IS (
+                                            SELECT JSON_ARRAYAGG
+                                                       ( JSON_OBJECT( 
+                                                            KEY 'dtl_id' VALUE dtl_id,
+                                                            KEY 'product_id' VALUE product_id,
+                                                            KEY 'barcode' VALUE
+                                                            (
+                                                                SELECT BARCODE FROM SALES_PRODUCT 
+                                                                where PRODUCT_ID  = dtl.product_id
+                                                            ),
+                                                            KEY 'unit_id' VALUE product_unit_id,
+                                                            KEY 'quantity' VALUE quantity,
+                                                            KEY 'base_price' VALUE price,
+                                                            KEY 'total_price' VALUE total_price,
+                                                            KEY 'discount_percentage' VALUE discount_percentage,
+                                                            KEY 'discount_value' VALUE discount_value,
+                                                            KEY 'post_discount_total_price' VALUE post_discount_total_price,
+                                                            KEY 'vat_percentage' VALUE vat_percentage,
+                                                            KEY 'vat_value' VALUE vat_value,
+                                                            KEY 'total_amount' VALUE total_amount,
+                                                            KEY 'pre_discount_vat_value' VALUE pre_discount_vat_value
+                                                                    RETURNING CLOB
+                                                                    )
+                                                                    RETURNING CLOB
+                                                      )
+                                            FROM SALES_RENT_INV_dtl dtl WHERE invoice_id = INV.invoice_id
+                                        )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM SALES_RENT_INV INV
+        WHERE INVOICE_ID = V_INVOICE_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            return NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
 
 /
 --------------------------------------------------------
@@ -941,6 +1254,186 @@ BEGIN
         INTO V_RESPONSE
         FROM SALES_RETURN_INV INV
         WHERE INVOICE_ID = V_INVOICE_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            return NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_STOCKIN_ORDER
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_STOCKIN_ORDER" (
+    P_FIRST       VARCHAR2,
+    P_LAST        VARCHAR2,
+    P_NEXT        VARCHAR2,
+    P_PREV        VARCHAR2,
+    P_ORDER_ID  VARCHAR2
+) RETURN CLOB AS
+    V_ORDER_ID    NUMBER;
+    V_RESPONSE      CLOB;
+BEGIN
+    BEGIN
+        IF p_first = '1' THEN
+            SELECT MIN(ORDER_ID)
+            INTO V_ORDER_ID
+            FROM STORE_STOCKIN_ORDER;
+        ELSIF p_last = '1' THEN
+            SELECT MAX(ORDER_ID)
+            INTO V_ORDER_ID
+            FROM STORE_STOCKIN_ORDER;
+        ELSIF p_next = '1' THEN
+            SELECT ORDER_ID
+            INTO V_ORDER_ID
+            FROM STORE_STOCKIN_ORDER
+            WHERE ORDER_ID > p_order_id
+            ORDER BY ORDER_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF p_prev = '1' THEN
+            SELECT ORDER_ID
+            INTO V_ORDER_ID
+            FROM STORE_STOCKIN_ORDER
+            WHERE ORDER_ID < p_order_id
+            ORDER BY ORDER_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ORDER_ID := p_order_id;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+							'order_id'    		IS order_id,
+							'store_id'    		IS store_id,
+							'order_date'    	IS order_date,
+							'ref_id'    		IS ref_id,
+							'account_id'    	IS account_id,
+							'cost_ctr_id'    	IS cost_ctr_id,
+							'accountable'    	IS accountable,
+							'notes'    			IS notes,
+							'company_id'    	IS company_id,
+							'user_id'    		IS user_id,
+							'total_amount'    	IS total_amount,
+							'acc_journal_id'    IS acc_journal_id,
+							'order_no'    		IS order_no,
+							'branch_id'    		IS branch_id,
+                            'items' IS (
+                                            SELECT JSON_ARRAYAGG
+                                                       ( JSON_OBJECT( 
+                                                            KEY 'dtl_id' VALUE dtl_id,
+                                                            KEY 'product_id' VALUE product_id,
+                                                            KEY 'barcode' VALUE
+                                                            (
+                                                                SELECT BARCODE FROM SALES_PRODUCT 
+                                                                where PRODUCT_ID  = dtl.product_id
+                                                            ),
+                                                            KEY 'unit_id' VALUE product_unit_id,
+                                                            KEY 'quantity' VALUE quantity,
+                                                            KEY 'base_price' VALUE price,
+                                                            KEY 'total_amount' VALUE total
+                                                                    RETURNING CLOB
+                                                                    )
+                                                                    RETURNING CLOB
+                                                      )
+                                            FROM STORE_STOCKIN_ORDER_dtl dtl WHERE order_id = INV.order_id
+                                        )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM STORE_STOCKIN_ORDER INV
+        WHERE ORDER_ID = V_ORDER_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            return NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_STOCKOUT_ORDER
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_STOCKOUT_ORDER" (
+    P_FIRST       VARCHAR2,
+    P_LAST        VARCHAR2,
+    P_NEXT        VARCHAR2,
+    P_PREV        VARCHAR2,
+    P_ORDER_ID  VARCHAR2
+) RETURN CLOB AS
+    V_ORDER_ID    NUMBER;
+    V_RESPONSE      CLOB;
+BEGIN
+    BEGIN
+        IF p_first = '1' THEN
+            SELECT MIN(ORDER_ID)
+            INTO V_ORDER_ID
+            FROM STORE_STOCKOUT_ORDER;
+        ELSIF p_last = '1' THEN
+            SELECT MAX(ORDER_ID)
+            INTO V_ORDER_ID
+            FROM STORE_STOCKOUT_ORDER;
+        ELSIF p_next = '1' THEN
+            SELECT ORDER_ID
+            INTO V_ORDER_ID
+            FROM STORE_STOCKOUT_ORDER
+            WHERE ORDER_ID > p_order_id
+            ORDER BY ORDER_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF p_prev = '1' THEN
+            SELECT ORDER_ID
+            INTO V_ORDER_ID
+            FROM STORE_STOCKOUT_ORDER
+            WHERE ORDER_ID < p_order_id
+            ORDER BY ORDER_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ORDER_ID := p_order_id;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+							'order_id'    		IS order_id,
+							'store_id'    		IS store_id,
+							'order_date'    	IS order_date,
+							'ref_id'    		IS ref_id,
+							'account_id'    	IS account_id,
+							'cost_ctr_id'    	IS cost_ctr_id,
+							'accountable'    	IS accountable,
+							'notes'    			IS notes,
+							'company_id'    	IS company_id,
+							'user_id'    		IS user_id,
+							'total_amount'    	IS total_amount,
+							'acc_journal_id'    IS acc_journal_id,
+							'order_no'    		IS order_no,
+							'branch_id'    		IS branch_id,
+                            'items' IS (
+                                            SELECT JSON_ARRAYAGG
+                                                       ( JSON_OBJECT( 
+                                                            KEY 'dtl_id' VALUE dtl_id,
+                                                            KEY 'product_id' VALUE product_id,
+                                                            KEY 'barcode' VALUE
+                                                            (
+                                                                SELECT BARCODE FROM SALES_PRODUCT 
+                                                                where PRODUCT_ID  = dtl.product_id
+                                                            ),
+                                                            KEY 'unit_id' VALUE product_unit_id,
+                                                            KEY 'quantity' VALUE quantity,
+                                                            KEY 'base_price' VALUE price,
+                                                            KEY 'total_amount' VALUE total
+                                                                    RETURNING CLOB
+                                                                    )
+                                                                    RETURNING CLOB
+                                                      )
+                                            FROM STORE_STOCKOUT_ORDER_dtl dtl WHERE order_id = INV.order_id
+                                        )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM STORE_STOCKOUT_ORDER INV
+        WHERE ORDER_ID = V_ORDER_ID;
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             return NULL;
