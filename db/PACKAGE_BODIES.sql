@@ -1738,6 +1738,90 @@ END COMPUTE;
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 1,P_LANG => P_LANG));
         END IF;
     END PURCHASE_INV_VALIDATE;        
+    
+    PROCEDURE PURCHASE_ORDER_VALIDATE (
+        P_DATA    IN   JSON_OBJECT_T,
+        P_LANG    IN   NUMBER,
+        P_RESULT  OUT  JSON_OBJECT_T
+    ) AS
+        P_ERROR_ARR JSON_ARRAY_T;
+    BEGIN
+        P_ERROR_ARR := JSON_ARRAY_T();
+        P_RESULT := JSON_OBJECT_T();
+        
+        IF P_DATA.GET_STRING('order_date') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"order_date",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 15,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('invoice_type') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"invoice_type",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 23,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('provider_id') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"provider_id",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 24,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('provider_inv_date') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"provider_inv_date",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 16,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('store_id') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"store_id",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 25,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('store_date') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"store_date",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 17,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('safe_id') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"safe_id",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 26,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('cost_ctr_id') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"cost_ctr_id",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 27,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('payment_type') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"payment_type",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 28,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        
+        IF P_ERROR_ARR.get_size > 0 THEN
+            P_RESULT.PUT('status','failed');
+            P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
+            P_RESULT.PUT('errors',P_ERROR_ARR);
+        ELSE
+            P_RESULT.PUT('status','succeeded');
+            P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 1,P_LANG => P_LANG));
+        END IF;
+    END PURCHASE_ORDER_VALIDATE;        
     PROCEDURE PUR_RETURN_INV_VALIDATE (
         P_DATA    IN   JSON_OBJECT_T,
         P_LANG    IN   NUMBER,
@@ -2631,6 +2715,84 @@ PROCEDURE SETUP_PROD_GROUP_VALIDATE (
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 1,P_LANG => P_LANG));
         END IF;
     END SETUP_PROD_GROUP_VALIDATE;
+    
+   PROCEDURE SALES_RENT_INV_VALIDATE (
+        P_DATA    IN   JSON_OBJECT_T,
+        P_LANG    IN   NUMBER,
+        P_RESULT  OUT  JSON_OBJECT_T
+    ) AS
+        P_ERROR_ARR JSON_ARRAY_T;
+    BEGIN
+        P_ERROR_ARR := JSON_ARRAY_T();
+        P_RESULT := JSON_OBJECT_T();
+
+        IF P_DATA.GET_STRING('invoice_date') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"invoice_date",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 15,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('invoice_type') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"invoice_type",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 23,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('client_id') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"client_id",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 24,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('store_id') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"store_id",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 25,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('store_date') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"store_date",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 17,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('safe_id') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"safe_id",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 26,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('cost_ctr_id') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"cost_ctr_id",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 27,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+        IF P_DATA.GET_STRING('payment_type') IS NULL THEN
+            P_ERROR_ARR.APPEND(JSON_OBJECT_T('
+            {
+                "field_name":"payment_type",
+                "message":"'||GET_ERROR_MSG(P_MSG_ID => 28,P_LANG => P_LANG)||'"
+            }'));
+        END IF;
+
+        IF P_ERROR_ARR.get_size > 0 THEN
+            P_RESULT.PUT('status','failed');
+            P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
+            P_RESULT.PUT('errors',P_ERROR_ARR);
+        ELSE
+            P_RESULT.PUT('status','succeeded');
+            P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 1,P_LANG => P_LANG));
+        END IF;
+    END SALES_RENT_INV_VALIDATE;
+
 END DATA_VALIDATION;
 
 /
@@ -4074,25 +4236,25 @@ END PWD_SECURITY;
 --  DDL for Package Body SALES_INV_DTL_TAPI
 --------------------------------------------------------
 
-  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SALES_INV_DTL_TAPI" is
--- insert
-    procedure INSERT_SALES_INV_DTL (
-        P_PRICE                     in SALES_INV_DTL.PRICE%type default null,
-        P_QUANTITY                  in SALES_INV_DTL.QUANTITY%type default null,
-        P_DISCOUNT_VALUE            in SALES_INV_DTL.DISCOUNT_VALUE%type default null,
-        P_PRODUCT_ID                in SALES_INV_DTL.PRODUCT_ID%type default null,
-        P_PRE_DISCOUNT_VAT_VALUE    in SALES_INV_DTL.PRE_DISCOUNT_VAT_VALUE%type default null,
-        P_INVOICE_ID                in SALES_INV_DTL.INVOICE_ID%type default null,
-        P_VAT_PERCENTAGE            in SALES_INV_DTL.VAT_PERCENTAGE%type default null,
-        P_TOTAL_PRICE               in SALES_INV_DTL.TOTAL_PRICE%type default null,
-        P_VAT_VALUE                 in SALES_INV_DTL.VAT_VALUE%type default null,
-        P_PRODUCT_UNIT_ID           in SALES_INV_DTL.PRODUCT_UNIT_ID%type default null,
-        P_DISCOUNT_PERCENTAGE       in SALES_INV_DTL.DISCOUNT_PERCENTAGE%type default null,
-        P_POST_DISCOUNT_TOTAL_PRICE in SALES_INV_DTL.POST_DISCOUNT_TOTAL_PRICE%type default null,
-        P_TOTAL_AMOUNT              in SALES_INV_DTL.TOTAL_AMOUNT%type default null
-    ) is
-    begin
-        insert into SALES_INV_DTL (
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SALES_INV_DTL_TAPI" IS
+
+    PROCEDURE INSERT_SALES_INV_DTL (
+        P_PRICE                      IN  SALES_INV_DTL.PRICE%TYPE DEFAULT NULL,
+        P_QUANTITY                   IN  SALES_INV_DTL.QUANTITY%TYPE DEFAULT NULL,
+        P_DISCOUNT_VALUE             IN  SALES_INV_DTL.DISCOUNT_VALUE%TYPE DEFAULT NULL,
+        P_PRODUCT_ID                 IN  SALES_INV_DTL.PRODUCT_ID%TYPE DEFAULT NULL,
+        P_PRE_DISCOUNT_VAT_VALUE     IN  SALES_INV_DTL.PRE_DISCOUNT_VAT_VALUE%TYPE DEFAULT NULL,
+        P_INVOICE_ID                 IN  SALES_INV_DTL.INVOICE_ID%TYPE DEFAULT NULL,
+        P_VAT_PERCENTAGE             IN  SALES_INV_DTL.VAT_PERCENTAGE%TYPE DEFAULT NULL,
+        P_TOTAL_PRICE                IN  SALES_INV_DTL.TOTAL_PRICE%TYPE DEFAULT NULL,
+        P_VAT_VALUE                  IN  SALES_INV_DTL.VAT_VALUE%TYPE DEFAULT NULL,
+        P_PRODUCT_UNIT_ID            IN  SALES_INV_DTL.PRODUCT_UNIT_ID%TYPE DEFAULT NULL,
+        P_DISCOUNT_PERCENTAGE        IN  SALES_INV_DTL.DISCOUNT_PERCENTAGE%TYPE DEFAULT NULL,
+        P_POST_DISCOUNT_TOTAL_PRICE  IN  SALES_INV_DTL.POST_DISCOUNT_TOTAL_PRICE%TYPE DEFAULT NULL,
+        P_TOTAL_AMOUNT               IN  SALES_INV_DTL.TOTAL_AMOUNT%TYPE DEFAULT NULL
+    ) IS
+    BEGIN
+        INSERT INTO SALES_INV_DTL (
             INVOICE_ID,
             PRICE,
             QUANTITY,
@@ -4106,7 +4268,7 @@ END PWD_SECURITY;
             DISCOUNT_PERCENTAGE,
             POST_DISCOUNT_TOTAL_PRICE,
             TOTAL_AMOUNT
-        ) values (
+        ) VALUES (
             P_INVOICE_ID,
             P_PRICE,
             P_QUANTITY,
@@ -4122,27 +4284,26 @@ END PWD_SECURITY;
             P_TOTAL_AMOUNT
         );
 
-    end INSERT_SALES_INV_DTL;
--- update
-    procedure UPDATE_SALES_INV_DTL (
-        P_INVOICE_DTL_ID            in SALES_INV_DTL.INVOICE_DTL_ID%type,
-        P_PRICE                     in SALES_INV_DTL.PRICE%type default null,
-        P_QUANTITY                  in SALES_INV_DTL.QUANTITY%type default null,
-        P_DISCOUNT_VALUE            in SALES_INV_DTL.DISCOUNT_VALUE%type default null,
-        P_PRODUCT_ID                in SALES_INV_DTL.PRODUCT_ID%type default null,
-        P_PRE_DISCOUNT_VAT_VALUE    in SALES_INV_DTL.PRE_DISCOUNT_VAT_VALUE%type default null,
-        P_INVOICE_ID                in SALES_INV_DTL.INVOICE_ID%type default null,
-        P_VAT_PERCENTAGE            in SALES_INV_DTL.VAT_PERCENTAGE%type default null,
-        P_TOTAL_PRICE               in SALES_INV_DTL.TOTAL_PRICE%type default null,
-        P_VAT_VALUE                 in SALES_INV_DTL.VAT_VALUE%type default null,
-        P_PRODUCT_UNIT_ID           in SALES_INV_DTL.PRODUCT_UNIT_ID%type default null,
-        P_DISCOUNT_PERCENTAGE       in SALES_INV_DTL.DISCOUNT_PERCENTAGE%type default null,
-        P_POST_DISCOUNT_TOTAL_PRICE in SALES_INV_DTL.POST_DISCOUNT_TOTAL_PRICE%type default null,
-        P_TOTAL_AMOUNT              in SALES_INV_DTL.TOTAL_AMOUNT%type default null
-    ) is
-    begin
-        update SALES_INV_DTL
-        set
+    END INSERT_SALES_INV_DTL;
+    PROCEDURE UPDATE_SALES_INV_DTL (
+        P_INVOICE_DTL_ID             IN  SALES_INV_DTL.INVOICE_DTL_ID%TYPE,
+        P_PRICE                      IN  SALES_INV_DTL.PRICE%TYPE DEFAULT NULL,
+        P_QUANTITY                   IN  SALES_INV_DTL.QUANTITY%TYPE DEFAULT NULL,
+        P_DISCOUNT_VALUE             IN  SALES_INV_DTL.DISCOUNT_VALUE%TYPE DEFAULT NULL,
+        P_PRODUCT_ID                 IN  SALES_INV_DTL.PRODUCT_ID%TYPE DEFAULT NULL,
+        P_PRE_DISCOUNT_VAT_VALUE     IN  SALES_INV_DTL.PRE_DISCOUNT_VAT_VALUE%TYPE DEFAULT NULL,
+        P_INVOICE_ID                 IN  SALES_INV_DTL.INVOICE_ID%TYPE DEFAULT NULL,
+        P_VAT_PERCENTAGE             IN  SALES_INV_DTL.VAT_PERCENTAGE%TYPE DEFAULT NULL,
+        P_TOTAL_PRICE                IN  SALES_INV_DTL.TOTAL_PRICE%TYPE DEFAULT NULL,
+        P_VAT_VALUE                  IN  SALES_INV_DTL.VAT_VALUE%TYPE DEFAULT NULL,
+        P_PRODUCT_UNIT_ID            IN  SALES_INV_DTL.PRODUCT_UNIT_ID%TYPE DEFAULT NULL,
+        P_DISCOUNT_PERCENTAGE        IN  SALES_INV_DTL.DISCOUNT_PERCENTAGE%TYPE DEFAULT NULL,
+        P_POST_DISCOUNT_TOTAL_PRICE  IN  SALES_INV_DTL.POST_DISCOUNT_TOTAL_PRICE%TYPE DEFAULT NULL,
+        P_TOTAL_AMOUNT               IN  SALES_INV_DTL.TOTAL_AMOUNT%TYPE DEFAULT NULL
+    ) IS
+    BEGIN
+        UPDATE SALES_INV_DTL
+        SET
             PRICE = P_PRICE,
             QUANTITY = P_QUANTITY,
             DISCOUNT_VALUE = P_DISCOUNT_VALUE,
@@ -4156,22 +4317,34 @@ END PWD_SECURITY;
             DISCOUNT_PERCENTAGE = P_DISCOUNT_PERCENTAGE,
             POST_DISCOUNT_TOTAL_PRICE = P_POST_DISCOUNT_TOTAL_PRICE,
             TOTAL_AMOUNT = P_TOTAL_AMOUNT
-        where
+        WHERE
             INVOICE_DTL_ID = P_INVOICE_DTL_ID;
 
-    end UPDATE_SALES_INV_DTL;
--- del
-    procedure DELETE_SALES_INV_DTL (
-        P_INVOICE_DTL_ID in SALES_INV_DTL.INVOICE_DTL_ID%type
-    ) is
-    begin
-        delete from SALES_INV_DTL
-        where
+    END UPDATE_SALES_INV_DTL;
+
+    PROCEDURE DELETE_SALES_INV_DTL (
+        P_INVOICE_DTL_ID IN SALES_INV_DTL.INVOICE_DTL_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SALES_INV_DTL
+        WHERE
             INVOICE_DTL_ID = P_INVOICE_DTL_ID;
 
-    end DELETE_SALES_INV_DTL;
+    END DELETE_SALES_INV_DTL;
 
-end SALES_INV_DTL_TAPI;
+    PROCEDURE DEL_DTL (
+        P_INVOICE_ID  IN  SALES_INV_DTL.INVOICE_ID%TYPE DEFAULT NULL,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM SALES_INV_DTL 
+        WHERE INVOICE_ID = P_INVOICE_ID AND  INVOICE_DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
+
+    END DEL_DTL;
+
+END SALES_INV_DTL_TAPI;
 
 /
 --------------------------------------------------------
@@ -4522,6 +4695,17 @@ END SALES_PRODUCT_FILES_TAPI;
 
     END;
 
+    PROCEDURE DEL_DTL (
+        P_INVOICE_ID  IN  NUMBER,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM SALES_PURCHASE_INV_DTL 
+        WHERE INVOICE_ID = P_INVOICE_ID AND  DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
+
+    END DEL_DTL;
 END SALES_PURCHASE_INV_DTL_TAPI;
 
 /
@@ -4810,6 +4994,17 @@ END SALES_PURCHASE_INV_TAPI;
 
     END;
 
+    PROCEDURE DEL_DTL (
+        P_ORDER_ID    IN  NUMBER,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM SALES_PURCHASE_ORDER_DTL 
+        WHERE ORDER_ID = P_ORDER_ID AND  DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
+
+    END DEL_DTL;
 END SALES_PURCHASE_ORDER_DTL_TAPI;
 
 /
@@ -5095,6 +5290,17 @@ END SALES_PURCHASE_ORDER_TAPI;
 
     END;
 
+    PROCEDURE DEL_DTL (
+        P_INVOICE_ID  IN  NUMBER,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM SALES_PUR_RETURN_INV_DTL 
+        WHERE INVOICE_ID = P_INVOICE_ID AND  DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
+
+    END DEL_DTL;
 END SALES_PUR_RETURN_INV_DTL_TAPI;
 
 /
@@ -5382,6 +5588,17 @@ END SALES_PUR_RETURN_INV_TAPI;
 
     END;
 
+    PROCEDURE DEL_DTL (
+        P_INVOICE_ID  IN  NUMBER,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM SALES_RENT_INV_DTL 
+        WHERE INVOICE_ID = P_INVOICE_ID AND  DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
+
+    END DEL_DTL;
 END SALES_RENT_INV_DTL_TAPI;
 
 /
@@ -5672,8 +5889,18 @@ END SALES_RENT_INV_TAPI;
 
     end DELETE_SALES_RETURN_INV_DTL;
 
-end SALES_RETURN_INV_DTL_TAPI;
+    PROCEDURE DEL_DTL (
+        P_INVOICE_ID  IN  NUMBER,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM SALES_RETURN_INV_DTL 
+        WHERE INVOICE_ID = P_INVOICE_ID AND  DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
 
+    END DEL_DTL;
+end SALES_RETURN_INV_DTL_TAPI;
 
 /
 --------------------------------------------------------
@@ -6424,6 +6651,17 @@ end SETUP_TAX_GROUP_TAPI;
 
     END;
 
+    PROCEDURE DEL_DTL (
+        P_INVOICE_ID  IN  NUMBER,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM STORE_FIRST_PERIOD_STOCK_DTL 
+        WHERE INVOICE_ID = P_INVOICE_ID AND  DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
+
+    END DEL_DTL;
 END STORE_FIRST_PERIOD_STOCK_DTL_TAPI;
 
 /
@@ -6448,8 +6686,8 @@ END STORE_FIRST_PERIOD_STOCK_DTL_TAPI;
         P_TOTAL_QUANTITY        IN   STORE_FIRST_PERIOD_STOCK.TOTAL_QUANTITY%TYPE DEFAULT NULL,
         P_STORE_ID              IN   STORE_FIRST_PERIOD_STOCK.STORE_ID%TYPE DEFAULT NULL,
         P_COMPANY_ID            IN   STORE_FIRST_PERIOD_STOCK.COMPANY_ID%TYPE,
+        P_BRANCH_ID             IN   STORE_FIRST_PERIOD_STOCK.BRANCH_ID%TYPE DEFAULT NULL,
         P_INVOICE_NO            OUT  STORE_FIRST_PERIOD_STOCK.INVOICE_NO%TYPE,
-        P_BRANCH_ID                   IN      STORE_FIRST_PERIOD_STOCK.BRANCH_ID%TYPE DEFAULT NULL,
         P_INVOICE_ID            OUT  STORE_FIRST_PERIOD_STOCK.INVOICE_ID%TYPE
     ) IS
     BEGIN
@@ -6555,7 +6793,7 @@ END STORE_FIRST_PERIOD_STOCK_TAPI;
 --------------------------------------------------------
 
   CREATE OR REPLACE EDITIONABLE PACKAGE BODY "STORE_STOCKIN_ORDER_DTL_TAPI" IS
--- insert
+
     PROCEDURE INSERT_STORE_STOCKIN_ORDER_DTL (
         P_DTL_ID          IN OUT STORE_STOCKIN_ORDER_DTL.DTL_ID%TYPE,
         P_TOTAL           IN STORE_STOCKIN_ORDER_DTL.TOTAL%TYPE DEFAULT NULL,
@@ -6583,7 +6821,7 @@ END STORE_FIRST_PERIOD_STOCK_TAPI;
         ) RETURNING DTL_ID INTO P_DTL_ID;
 
     END INSERT_STORE_STOCKIN_ORDER_DTL;
--- update
+    
     PROCEDURE UPDATE_STORE_STOCKIN_ORDER_DTL (
         P_DTL_ID          IN  STORE_STOCKIN_ORDER_DTL.DTL_ID%TYPE,
         P_TOTAL           IN STORE_STOCKIN_ORDER_DTL.TOTAL%TYPE DEFAULT NULL,
@@ -6606,7 +6844,7 @@ END STORE_FIRST_PERIOD_STOCK_TAPI;
             DTL_ID = P_DTL_ID;
 
     END UPDATE_STORE_STOCKIN_ORDER_DTL;
--- del
+    
     PROCEDURE DELETE_STORE_STOCKIN_ORDER_DTL (
         P_DTL_ID IN STORE_STOCKIN_ORDER_DTL.DTL_ID%TYPE
     ) IS
@@ -6617,6 +6855,17 @@ END STORE_FIRST_PERIOD_STOCK_TAPI;
 
     END DELETE_STORE_STOCKIN_ORDER_DTL;
 
+    PROCEDURE DEL_DTL (
+        P_ORDER_ID    IN  NUMBER,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM STORE_STOCKIN_ORDER_DTL 
+        WHERE ORDER_ID = P_ORDER_ID AND  DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
+
+    END DEL_DTL;
 END STORE_STOCKIN_ORDER_DTL_TAPI;
 
 /
@@ -6709,9 +6958,8 @@ END STORE_STOCKIN_ORDER_DTL_TAPI;
             STORE_ID = P_STORE_ID,
             REF_ID = P_REF_ID,
             TOTAL_AMOUNT = P_TOTAL_AMOUNT,
-            ACCOUNTABLE = P_ACCOUNTABLE,
-            COMPANY_ID = P_COMPANY_ID,
-            ORDER_NO=P_ORDER_NO
+            ACCOUNTABLE = nvl(P_ACCOUNTABLE,0),
+            COMPANY_ID = P_COMPANY_ID
         WHERE
             ORDER_ID = P_ORDER_ID;
 
@@ -6796,6 +7044,17 @@ END STORE_STOCKIN_ORDER_TAPI;
 
     END;
 
+    PROCEDURE DEL_DTL (
+        P_ORDER_ID    IN  NUMBER,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM STORE_STOCKOUT_ORDER_DTL 
+        WHERE ORDER_ID = P_ORDER_ID AND  DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
+
+    END DEL_DTL;
 END STORE_STOCKOUT_ORDER_DTL_TAPI;
 
 /
@@ -6966,8 +7225,18 @@ END STORE_STOCKOUT_ORDER_TAPI;
 
     END DELETE_STORE_TRANSFER_DTL;
 
-END STORE_TRANSFER_DTL_TAPI;
+    PROCEDURE DEL_DTL (
+        P_TRANSFER_ID IN  NUMBER,
+        P_ID_LIST     IN  JSON_ARRAY_T
+    ) IS
+        V_ID_TBL    ID_TBL := ID_TBL();
+    BEGIN
+        V_ID_TBL := ARRAY_TO_TABLE(P_JSON_ARRAY => P_ID_LIST, P_ID_INDEX => 'dtl_id');
+        DELETE FROM STORE_TRANSFER_DTL 
+        WHERE TRANSFER_ID = P_TRANSFER_ID AND  DTL_ID NOT IN (SELECT ID FROM TABLE(V_ID_TBL));
 
+    END DEL_DTL;
+END STORE_TRANSFER_DTL_TAPI;
 
 /
 --------------------------------------------------------

@@ -216,6 +216,33 @@ END ACC_BALS_BANK;
 
 /
 --------------------------------------------------------
+--  DDL for Function ARRAY_TO_TABLE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "ARRAY_TO_TABLE" (
+    P_JSON_ARRAY  JSON_ARRAY_T,
+    P_ID_INDEX    VARCHAR2
+) RETURN ID_TBL AS
+    V_INDEX     NUMBER := 0;
+    L_ITEM_OBJ  JSON_OBJECT_T;
+    V_ID_TBL    ID_TBL := ID_TBL();
+BEGIN
+    IF P_JSON_ARRAY IS NULL THEN
+        RETURN V_ID_TBL;
+    END IF;
+    FOR I IN 0..P_JSON_ARRAY.GET_SIZE - 1 LOOP
+        L_ITEM_OBJ                := TREAT(P_JSON_ARRAY.GET(I) AS JSON_OBJECT_T);
+        IF L_ITEM_OBJ.GET_STRING(P_ID_INDEX) IS NOT NULL THEN
+            V_INDEX := V_INDEX+1;
+            V_ID_TBL.EXTEND;
+            V_ID_TBL(V_INDEX) :=  ID_TYPE(ID  => L_ITEM_OBJ.GET_STRING(P_ID_INDEX));
+        END IF;
+    END LOOP;
+    RETURN V_ID_TBL;
+END ARRAY_TO_TABLE;
+
+/
+--------------------------------------------------------
 --  DDL for Function BALANCE_SHEET
 --------------------------------------------------------
 
@@ -1311,12 +1338,11 @@ BEGIN
 							'ref_id'    		IS ref_id,
 							'account_id'    	IS account_id,
 							'cost_ctr_id'    	IS cost_ctr_id,
-							'accountable'    	IS accountable,
+							'accountable'    	IS nvl(accountable,0),
 							'notes'    			IS notes,
 							'company_id'    	IS company_id,
 							'user_id'    		IS user_id,
 							'total_amount'    	IS total_amount,
-							'acc_journal_id'    IS acc_journal_id,
 							'order_no'    		IS order_no,
 							'branch_id'    		IS branch_id,
                             'items' IS (
