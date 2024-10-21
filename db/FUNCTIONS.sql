@@ -216,6 +216,106 @@ END ACC_BALS_BANK;
 
 /
 --------------------------------------------------------
+--  DDL for Function ACC_BALS_SAFE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "ACC_BALS_SAFE" (
+    P_COMPANY_ID   NUMBER,
+    P_FROM_DATE       NVARCHAR2,
+    P_TO_DATE         NVARCHAR2,
+    P_SAFE_ID  NUMBER DEFAULT 0
+) RETURN BAL_SAFE_TBL AS 
+ V_BAL_SAFE_REC BAL_SAFE_REC := BAL_SAFE_REC(
+        ACCOUNT_ID          => NULL,
+        ACCOUNT_NAME_AR     => NULL,
+        ACCOUNT_NAME_EN     => NULL,
+		MAIN_SAFE_NAME_AR   => NULL,
+		MAIN_SAFE_NAME_EN   => NULL,
+        SAFE_NAME_AR        => NULL,
+		SAFE_NAME_EN        => NULL,
+		DEBIT_BAL           => NULL,
+        CREDIT_BAL          => NULL,
+        BAL                 => NULL,
+        BAL_NATURE          => NULL
+    );
+	V_MAIN_SAFE_NAME_AR NVARCHAR2(200);
+	V_MAIN_SAFE_NAME_EN NVARCHAR2(200);
+    V_BAL_SAFE_TBL BAL_SAFE_TBL:= BAL_SAFE_TBL();
+    V_INDEX NUMBER:= 0;
+    V_INDEX_TEMP NUMBER:= 0;
+    V_LEVEL_NO NUMBER:= 5;
+BEGIN
+
+IF P_SAFE_ID= 0 THEN 
+  V_MAIN_SAFE_NAME_AR   :='الكل';
+  V_MAIN_SAFE_NAME_EN    :='All';
+  else  
+    select 
+	  SAFE_NAME_AR,
+	  SAFE_NAME_EN
+	 into 
+	  V_MAIN_SAFE_NAME_AR,
+	  V_MAIN_SAFE_NAME_EN
+	 from SETUP_SAFE
+	 where COMPANY_ID=P_COMPANY_ID
+	 and SAFE_ID=P_SAFE_ID;
+
+  end if;
+    FOR REC IN (
+        WITH in_period as (
+        select 
+        ACCOUNT_ID,
+        SUM(nvl(DEBIT,0)) DEBIT_BAL,
+        SUM(nvl(CREDIT,0)) CREDIT_BAL,
+        DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0)),SUM(NVL(L.CREDIT,0)) -SUM(NVL(L.DEBIT,0))) BAL,
+		DECODE(SIGN(SUM(NVL(L.DEBIT,0)) -SUM(NVL(L.CREDIT,0))),1,1,-1,2,NULL) BAL_NATURE
+         from acc_ledger l
+         WHERE l.COMPANY_ID = P_COMPANY_ID AND  JOURNAL_DATE >= TO_DATE(P_FROM_DATE,'DD-MM-YYYY') AND JOURNAL_DATE <= TO_DATE(P_TO_DATE,'DD-MM-YYYY') 
+         GROUP BY ACCOUNT_ID
+        )
+        select 
+            ACC.ACCOUNT_ID,
+            account_name_ar,
+            ACCOUNT_NAME_EN,
+			SAFE_NAME_AR,
+			SAFE_NAME_EN,
+            ACCOUNT_PARENT,
+            NVL(DEBIT_BAL,0) DEBIT_BAL,
+            NVL(CREDIT_BAL,0) CREDIT_BAL,
+            NVL(BAL,0) BAL,
+            NVL(BAL_NATURE,ACC.ACCOUNT_NATURE) BAL_NATURE
+        from acc_accounts acc full outer JOIN in_period ON 
+        acc.ACCOUNT_ID = in_period.ACCOUNT_ID
+		JOIN SETUP_SAFE SA ON SA.ACCOUNT_ID=ACC.ACCOUNT_ID
+        WHERE SA.COMPANY_ID = P_COMPANY_ID AND (SA.SAFE_ID =P_SAFE_ID OR P_SAFE_ID=0)
+        order by acc.ACCOUNT_ID
+    )
+    LOOP
+
+            V_BAL_SAFE_REC.ACCOUNT_ID          := REC.ACCOUNT_ID;
+            V_BAL_SAFE_REC.ACCOUNT_NAME_AR     := REC.ACCOUNT_NAME_AR;
+            V_BAL_SAFE_REC.ACCOUNT_NAME_EN     := REC.ACCOUNT_NAME_EN;
+            V_BAL_SAFE_REC.MAIN_SAFE_NAME_AR   := V_MAIN_SAFE_NAME_AR;
+            V_BAL_SAFE_REC.MAIN_SAFE_NAME_EN   := V_MAIN_SAFE_NAME_EN;
+            V_BAL_SAFE_REC.SAFE_NAME_AR        := REC.SAFE_NAME_AR;
+            V_BAL_SAFE_REC.SAFE_NAME_EN        := REC.SAFE_NAME_EN;
+			V_BAL_SAFE_REC.DEBIT_BAL       := REC.DEBIT_BAL;
+			V_BAL_SAFE_REC.CREDIT_BAL        := REC.CREDIT_BAL;
+			V_BAL_SAFE_REC.BAL        := REC.BAL;
+			V_BAL_SAFE_REC.BAL_NATURE        := REC.BAL_NATURE;
+
+
+        V_BAL_SAFE_TBL.EXTEND;
+        V_INDEX := V_INDEX+1;
+        V_BAL_SAFE_TBL(V_INDEX) := V_BAL_SAFE_REC;
+
+ END LOOP;
+
+    RETURN V_BAL_SAFE_TBL;
+END ACC_BALS_SAFE;
+
+/
+--------------------------------------------------------
 --  DDL for Function ARRAY_TO_TABLE
 --------------------------------------------------------
 
@@ -1432,7 +1532,6 @@ BEGIN
 							'company_id'    	IS company_id,
 							'user_id'    		IS user_id,
 							'total_amount'    	IS total_amount,
-							'acc_journal_id'    IS acc_journal_id,
 							'order_no'    		IS order_no,
 							'branch_id'    		IS branch_id,
                             'items' IS (
