@@ -2349,7 +2349,7 @@ PROCEDURE SETUP_TAX_GROUP_VALIDATE (
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 3,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        IF P_DATA.GET_STRING('Name_En') IS NULL THEN
+        IF P_DATA.GET_STRING('name_en') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
                 "field_name":"name_en",
@@ -4233,6 +4233,131 @@ END PWD_SECURITY;
 
 /
 --------------------------------------------------------
+--  DDL for Package Body SALES_CLIENT_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SALES_CLIENT_TAPI" IS
+
+    PROCEDURE INSERT_SALES_CLIENT (
+        P_CLIENT_ID    IN OUT  SALES_CLIENT.CLIENT_ID%TYPE,
+        P_REGION_ID    IN  SALES_CLIENT.REGION_ID%TYPE DEFAULT NULL,
+        P_TAX_NO       IN  SALES_CLIENT.TAX_NO%TYPE DEFAULT NULL,
+        P_COUNTRY_ID   IN  SALES_CLIENT.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_TEL_NO       IN  SALES_CLIENT.TEL_NO%TYPE DEFAULT NULL,
+        P_SREET        IN  SALES_CLIENT.SREET%TYPE DEFAULT NULL,
+        P_ACCOUNT_ID   IN  SALES_CLIENT.ACCOUNT_ID%TYPE DEFAULT NULL,
+        P_NAME_AR      IN  SALES_CLIENT.NAME_AR%TYPE DEFAULT NULL,
+        P_EMAIL        IN  SALES_CLIENT.EMAIL%TYPE DEFAULT NULL,
+        P_MOBILE_NO    IN  SALES_CLIENT.MOBILE_NO%TYPE DEFAULT NULL,
+        P_STATUS       IN  SALES_CLIENT.STATUS%TYPE DEFAULT NULL,
+        P_NAME_EN      IN  SALES_CLIENT.NAME_EN%TYPE DEFAULT NULL,
+        P_CITY_ID      IN  SALES_CLIENT.CITY_ID%TYPE DEFAULT NULL,
+        P_NOTE         IN  SALES_CLIENT.NOTE%TYPE DEFAULT NULL,
+        P_BUILDING_NO  IN  SALES_CLIENT.BUILDING_NO%TYPE DEFAULT NULL,
+        P_POST_CODE    IN  SALES_CLIENT.POST_CODE%TYPE DEFAULT NULL,
+        P_FAX          IN  SALES_CLIENT.FAX%TYPE DEFAULT NULL,
+        P_COMPANY_ID   IN  SALES_CLIENT.COMPANY_ID%TYPE DEFAULT NULL
+    ) IS
+    BEGIN
+        INSERT INTO SALES_CLIENT (
+            REGION_ID,
+            TAX_NO,
+            COUNTRY_ID,
+            TEL_NO,
+            SREET,
+            ACCOUNT_ID,
+            NAME_AR,
+            EMAIL,
+            MOBILE_NO,
+            STATUS,
+            NAME_EN,
+            CITY_ID,
+            NOTE,
+            BUILDING_NO,
+            POST_CODE,
+            FAX,
+            COMPANY_ID
+        ) VALUES (
+            P_REGION_ID,
+            P_TAX_NO,
+            P_COUNTRY_ID,
+            P_TEL_NO,
+            P_SREET,
+            P_ACCOUNT_ID,
+            P_NAME_AR,
+            P_EMAIL,
+            P_MOBILE_NO,
+            P_STATUS,
+            P_NAME_EN,
+            P_CITY_ID,
+            P_NOTE,
+            P_BUILDING_NO,
+            P_POST_CODE,
+            P_FAX,
+            P_COMPANY_ID
+        )RETURNING CLIENT_ID INTO P_CLIENT_ID;
+
+    END;
+
+    PROCEDURE UPDATE_SALES_CLIENT (
+        P_REGION_ID    IN  SALES_CLIENT.REGION_ID%TYPE DEFAULT NULL,
+        P_TAX_NO       IN  SALES_CLIENT.TAX_NO%TYPE DEFAULT NULL,
+        P_COUNTRY_ID   IN  SALES_CLIENT.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_TEL_NO       IN  SALES_CLIENT.TEL_NO%TYPE DEFAULT NULL,
+        P_SREET        IN  SALES_CLIENT.SREET%TYPE DEFAULT NULL,
+        P_ACCOUNT_ID   IN  SALES_CLIENT.ACCOUNT_ID%TYPE DEFAULT NULL,
+        P_NAME_AR      IN  SALES_CLIENT.NAME_AR%TYPE DEFAULT NULL,
+        P_EMAIL        IN  SALES_CLIENT.EMAIL%TYPE DEFAULT NULL,
+        P_MOBILE_NO    IN  SALES_CLIENT.MOBILE_NO%TYPE DEFAULT NULL,
+        P_STATUS       IN  SALES_CLIENT.STATUS%TYPE DEFAULT NULL,
+        P_NAME_EN      IN  SALES_CLIENT.NAME_EN%TYPE DEFAULT NULL,
+        P_CITY_ID      IN  SALES_CLIENT.CITY_ID%TYPE DEFAULT NULL,
+        P_CLIENT_ID    IN  SALES_CLIENT.CLIENT_ID%TYPE,
+        P_NOTE         IN  SALES_CLIENT.NOTE%TYPE DEFAULT NULL,
+        P_BUILDING_NO  IN  SALES_CLIENT.BUILDING_NO%TYPE DEFAULT NULL,
+        P_POST_CODE    IN  SALES_CLIENT.POST_CODE%TYPE DEFAULT NULL,
+        P_FAX          IN  SALES_CLIENT.FAX%TYPE DEFAULT NULL,
+        P_COMPANY_ID   IN  SALES_CLIENT.COMPANY_ID%TYPE DEFAULT NULL
+    ) IS
+    BEGIN
+        UPDATE SALES_CLIENT
+        SET
+            REGION_ID = P_REGION_ID,
+            TAX_NO = P_TAX_NO,
+            COUNTRY_ID = P_COUNTRY_ID,
+            TEL_NO = P_TEL_NO,
+            SREET = P_SREET,
+            ACCOUNT_ID = P_ACCOUNT_ID,
+            NAME_AR = P_NAME_AR,
+            EMAIL = P_EMAIL,
+            MOBILE_NO = P_MOBILE_NO,
+            STATUS = P_STATUS,
+            NAME_EN = P_NAME_EN,
+            CITY_ID = P_CITY_ID,
+            NOTE = P_NOTE,
+            BUILDING_NO = P_BUILDING_NO,
+            POST_CODE = P_POST_CODE,
+            FAX = P_FAX,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            CLIENT_ID = P_CLIENT_ID;
+
+    END;
+
+    PROCEDURE DELETE_SALES_CLIENT (
+        P_CLIENT_ID IN SALES_CLIENT.CLIENT_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SALES_CLIENT
+        WHERE
+            CLIENT_ID = P_CLIENT_ID;
+
+    END;
+
+END SALES_CLIENT_TAPI;
+
+/
+--------------------------------------------------------
 --  DDL for Package Body SALES_INV_DTL_TAPI
 --------------------------------------------------------
 
@@ -4592,6 +4717,133 @@ END SALES_INV_TAPI;
     END;
 
 END SALES_PRODUCT_FILES_TAPI;
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SALES_PROVIDER_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SALES_PROVIDER_TAPI" IS
+
+    PROCEDURE INSERT_SALES_PROVIDER (
+        P_PROVIDER_ID  IN OUT  SALES_PROVIDER.PROVIDER_ID%TYPE,
+        P_REGION_ID    IN      SALES_PROVIDER.REGION_ID%TYPE DEFAULT NULL,
+        P_TAX_NO       IN      SALES_PROVIDER.TAX_NO%TYPE DEFAULT NULL,
+        P_COUNTRY_ID   IN      SALES_PROVIDER.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_TEL_NO       IN      SALES_PROVIDER.TEL_NO%TYPE DEFAULT NULL,
+        P_SREET        IN      SALES_PROVIDER.SREET%TYPE DEFAULT NULL,
+        P_ACCOUNT_ID   IN      SALES_PROVIDER.ACCOUNT_ID%TYPE DEFAULT NULL,
+        P_NAME_AR      IN      SALES_PROVIDER.NAME_AR%TYPE DEFAULT NULL,
+        P_EMAIL        IN      SALES_PROVIDER.EMAIL%TYPE DEFAULT NULL,
+        P_MOBILE_NO    IN      SALES_PROVIDER.MOBILE_NO%TYPE DEFAULT NULL,
+        P_STATUS       IN      SALES_PROVIDER.STATUS%TYPE DEFAULT NULL,
+        P_NAME_EN      IN      SALES_PROVIDER.NAME_EN%TYPE DEFAULT NULL,
+        P_CITY_ID      IN      SALES_PROVIDER.CITY_ID%TYPE DEFAULT NULL,
+        P_NOTE         IN      SALES_PROVIDER.NOTE%TYPE DEFAULT NULL,
+        P_BUILDING_NO  IN      SALES_PROVIDER.BUILDING_NO%TYPE DEFAULT NULL,
+        P_POST_CODE    IN      SALES_PROVIDER.POST_CODE%TYPE DEFAULT NULL,
+        P_FAX          IN      SALES_PROVIDER.FAX%TYPE DEFAULT NULL,
+        P_COMPANY_ID   IN      SALES_PROVIDER.COMPANY_ID%TYPE DEFAULT NULL
+    ) IS
+    BEGIN
+        INSERT INTO SALES_PROVIDER (
+            REGION_ID,
+            TAX_NO,
+            COUNTRY_ID,
+            TEL_NO,
+            SREET,
+            ACCOUNT_ID,
+            NAME_AR,
+            EMAIL,
+            PROVIDER_ID,
+            MOBILE_NO,
+            STATUS,
+            NAME_EN,
+            CITY_ID,
+            NOTE,
+            BUILDING_NO,
+            POST_CODE,
+            FAX,
+            COMPANY_ID
+        ) VALUES (
+            P_REGION_ID,
+            P_TAX_NO,
+            P_COUNTRY_ID,
+            P_TEL_NO,
+            P_SREET,
+            P_ACCOUNT_ID,
+            P_NAME_AR,
+            P_EMAIL,
+            P_PROVIDER_ID,
+            P_MOBILE_NO,
+            P_STATUS,
+            P_NAME_EN,
+            P_CITY_ID,
+            P_NOTE,
+            P_BUILDING_NO,
+            P_POST_CODE,
+            P_FAX,
+            P_COMPANY_ID
+        );
+
+    END;
+
+    PROCEDURE UPDATE_SALES_PROVIDER (
+        P_REGION_ID    IN  SALES_PROVIDER.REGION_ID%TYPE DEFAULT NULL,
+        P_TAX_NO       IN  SALES_PROVIDER.TAX_NO%TYPE DEFAULT NULL,
+        P_COUNTRY_ID   IN  SALES_PROVIDER.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_TEL_NO       IN  SALES_PROVIDER.TEL_NO%TYPE DEFAULT NULL,
+        P_SREET        IN  SALES_PROVIDER.SREET%TYPE DEFAULT NULL,
+        P_ACCOUNT_ID   IN  SALES_PROVIDER.ACCOUNT_ID%TYPE DEFAULT NULL,
+        P_NAME_AR      IN  SALES_PROVIDER.NAME_AR%TYPE DEFAULT NULL,
+        P_EMAIL        IN  SALES_PROVIDER.EMAIL%TYPE DEFAULT NULL,
+        P_PROVIDER_ID  IN  SALES_PROVIDER.PROVIDER_ID%TYPE,
+        P_MOBILE_NO    IN  SALES_PROVIDER.MOBILE_NO%TYPE DEFAULT NULL,
+        P_STATUS       IN  SALES_PROVIDER.STATUS%TYPE DEFAULT NULL,
+        P_NAME_EN      IN  SALES_PROVIDER.NAME_EN%TYPE DEFAULT NULL,
+        P_CITY_ID      IN  SALES_PROVIDER.CITY_ID%TYPE DEFAULT NULL,
+        P_NOTE         IN  SALES_PROVIDER.NOTE%TYPE DEFAULT NULL,
+        P_BUILDING_NO  IN  SALES_PROVIDER.BUILDING_NO%TYPE DEFAULT NULL,
+        P_POST_CODE    IN  SALES_PROVIDER.POST_CODE%TYPE DEFAULT NULL,
+        P_FAX          IN  SALES_PROVIDER.FAX%TYPE DEFAULT NULL,
+        P_COMPANY_ID   IN  SALES_PROVIDER.COMPANY_ID%TYPE DEFAULT NULL
+    ) IS
+    BEGIN
+        UPDATE SALES_PROVIDER
+        SET
+            REGION_ID = P_REGION_ID,
+            TAX_NO = P_TAX_NO,
+            COUNTRY_ID = P_COUNTRY_ID,
+            TEL_NO = P_TEL_NO,
+            SREET = P_SREET,
+            ACCOUNT_ID = P_ACCOUNT_ID,
+            NAME_AR = P_NAME_AR,
+            EMAIL = P_EMAIL,
+            MOBILE_NO = P_MOBILE_NO,
+            STATUS = P_STATUS,
+            NAME_EN = P_NAME_EN,
+            CITY_ID = P_CITY_ID,
+            NOTE = P_NOTE,
+            BUILDING_NO = P_BUILDING_NO,
+            POST_CODE = P_POST_CODE,
+            FAX = P_FAX,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            PROVIDER_ID = P_PROVIDER_ID;
+
+    END;
+
+    PROCEDURE DEL_SALES_PROVIDER (
+        P_PROVIDER_ID IN SALES_PROVIDER.PROVIDER_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SALES_PROVIDER
+        WHERE
+            PROVIDER_ID = P_PROVIDER_ID;
+
+    END;
+
+END SALES_PROVIDER_TAPI;
 
 /
 --------------------------------------------------------
