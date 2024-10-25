@@ -655,6 +655,250 @@ END;
 
 /
 --------------------------------------------------------
+--  DDL for Function GET_JOURNAL
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_JOURNAL" (
+    P_FIRST  VARCHAR2,
+    P_LAST   VARCHAR2,
+    P_NEXT   VARCHAR2,
+    P_PREV   VARCHAR2,
+    P_ID     VARCHAR2
+) RETURN CLOB AS
+    V_ID        NUMBER;
+    V_RESPONSE  CLOB;
+BEGIN
+    BEGIN
+        IF P_FIRST = '1' THEN
+            SELECT MIN(acc_journal_id)
+            INTO V_ID
+            FROM acc_journal;
+        ELSIF P_LAST = '1' THEN
+            SELECT MAX(acc_journal_id)
+            INTO V_ID
+            FROM acc_journal;
+        ELSIF P_NEXT = '1' THEN
+            SELECT acc_journal_id
+            INTO V_ID
+            FROM acc_journal
+            WHERE acc_journal_id > P_ID
+            ORDER BY acc_journal_id ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF P_PREV = '1' THEN
+            SELECT acc_journal_id
+            INTO V_ID
+            FROM acc_journal
+            WHERE acc_journal_id < P_ID
+            ORDER BY acc_journal_id DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ID := P_ID;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'acc_journal_id'  IS acc_journal_id,
+                    'journal_date'    IS journal_date,
+                    'posted'          IS posted,
+                    'note'            IS note,
+                    'is_canceled'     IS is_canceled,
+                    'company_id'      IS company_id,
+                    'journal_type'    IS journal_type,
+                    'items' IS (
+                                SELECT JSON_ARRAYAGG
+                                            ( JSON_OBJECT( 
+                                            KEY 'journal_dtl_id'   VALUE journal_dtl_id,
+                                            KEY 'journal_id'       VALUE journal_id,
+                                            KEY 'debit'            VALUE debit,
+                                            KEY 'credit'           VALUE credit,
+                                            KEY 'account_id'       VALUE account_id,
+                                            KEY 'note'             VALUE note,
+                                            KEY 'cost_cntr_id'     VALUE cost_cntr_id,
+                                            KEY 'ref_no'           VALUE ref_no
+                                                        RETURNING CLOB
+                                                    )
+                                                RETURNING CLOB
+                                            )
+                                        FROM acc_journal_dtl dtl WHERE journal_id = INV.acc_journal_id
+                                    )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM acc_journal INV
+        WHERE acc_journal_id = V_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_PAYMENT_VOUCHER
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_PAYMENT_VOUCHER" (
+    P_FIRST  VARCHAR2,
+    P_LAST   VARCHAR2,
+    P_NEXT   VARCHAR2,
+    P_PREV   VARCHAR2,
+    P_ID     VARCHAR2
+) RETURN CLOB AS
+    V_ID        NUMBER;
+    V_RESPONSE  CLOB;
+BEGIN
+    BEGIN
+        IF P_FIRST = '1' THEN
+            SELECT MIN(acc_voucher_id)
+            INTO V_ID
+            FROM acc_voucher;
+        ELSIF P_LAST = '1' THEN
+            SELECT MAX(acc_voucher_id)
+            INTO V_ID
+            FROM acc_voucher;
+        ELSIF P_NEXT = '1' THEN
+            SELECT acc_voucher_id
+            INTO V_ID
+            FROM acc_voucher
+            WHERE acc_voucher_id > P_ID
+            ORDER BY acc_voucher_id ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF P_PREV = '1' THEN
+            SELECT acc_voucher_id
+            INTO V_ID
+            FROM acc_voucher
+            WHERE acc_voucher_id < P_ID
+            ORDER BY acc_voucher_id DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ID := P_ID;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'acc_voucher_id'   IS acc_voucher_id,
+                    'amount'           IS amount,
+                    'account_id'       IS account_id,
+                    'ref_id'           IS ref_id,
+                    'payment_method'   IS payment_method,
+                    'paid_to'          IS paid_to,
+                    'voucher_date'     IS voucher_date,
+                    'posted'           IS posted,
+                    'voucher_type'     IS voucher_type,
+                    'note'             IS note,
+                    'check_no'         IS check_no,
+                    'check_date'       IS check_date,
+                    'cost_cntr_id'     IS cost_cntr_id,
+                    'company_id'       IS company_id,
+                    'total_vat'        IS total_vat,
+                    'items' IS (
+                                SELECT JSON_ARRAYAGG
+                                            ( JSON_OBJECT( 
+                                            KEY 'acc_voucher_dtl_id'  VALUE acc_voucher_dtl_id,
+                                            KEY 'acc_voucher_id'      VALUE acc_voucher_id,
+                                            KEY 'account_id'          VALUE account_id,
+                                            KEY 'ref_id'              VALUE ref_id,
+                                            KEY 'amount'              VALUE amount,
+                                            KEY 'note'                VALUE note,
+                                            KEY 'cost_cntr_id'        VALUE cost_cntr_id,
+                                            KEY 'tax_rate'            VALUE tax_rate,
+                                            KEY 'tax_amount'          VALUE tax_amount,
+                                            KEY 'total_amount'        VALUE total_amount
+                                                        RETURNING CLOB
+                                                    )
+                                                RETURNING CLOB
+                                            )
+                                        FROM acc_voucher_dtl dtl WHERE acc_voucher_id = INV.acc_voucher_id
+                                    )
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM acc_voucher INV
+        WHERE acc_voucher_id = V_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_PROVIDER
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_PROVIDER" (
+    P_FIRST  VARCHAR2,
+    P_LAST   VARCHAR2,
+    P_NEXT   VARCHAR2,
+    P_PREV   VARCHAR2,
+    P_ID     VARCHAR2
+) RETURN CLOB AS
+    V_ID        NUMBER;
+    V_RESPONSE  CLOB;
+BEGIN
+    BEGIN
+        IF P_FIRST = '1' THEN
+            SELECT MIN(PROVIDER_ID)
+            INTO V_ID
+            FROM SALES_PROVIDER;
+        ELSIF P_LAST = '1' THEN
+            SELECT MAX(PROVIDER_ID)
+            INTO V_ID
+            FROM SALES_PROVIDER;
+        ELSIF P_NEXT = '1' THEN
+            SELECT PROVIDER_ID
+            INTO V_ID
+            FROM SALES_PROVIDER
+            WHERE PROVIDER_ID > P_ID
+            ORDER BY PROVIDER_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF P_PREV = '1' THEN
+            SELECT PROVIDER_ID
+            INTO V_ID
+            FROM SALES_PROVIDER
+            WHERE PROVIDER_ID < P_ID
+            ORDER BY PROVIDER_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ID := P_ID;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'provider_id'       IS PROVIDER_ID,
+                    'name_ar'           IS NAME_AR,
+                    'name_en'           IS NAME_EN,
+                    'mobile_no'         IS MOBILE_NO,
+                    'company_id'        IS COMPANY_ID,
+                    'tel_no'            IS TEL_NO,
+                    'fax'               IS FAX,
+                    'email'             IS EMAIL,
+                    'tax_no'            IS TAX_NO,
+                    'country_id'        IS COUNTRY_ID,
+                    'city_id'           IS CITY_ID,
+                    'region_id'         IS REGION_ID,
+                    'building_no'       IS BUILDING_NO,
+                    'sreet'             IS SREET,
+                    'post_code'         IS POST_CODE,
+                    'note'              IS NOTE,
+                    'status'            IS STATUS,
+                    'account_id'        IS ACCOUNT_ID
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM SALES_PROVIDER INV
+        WHERE PROVIDER_ID = V_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
 --  DDL for Function GET_PURCHASE_INVOICE
 --------------------------------------------------------
 
@@ -1173,6 +1417,136 @@ END;
 
 /
 --------------------------------------------------------
+--  DDL for Function GET_ROLE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_ROLE" (
+    P_FIRST  VARCHAR2,
+    P_LAST   VARCHAR2,
+    P_NEXT   VARCHAR2,
+    P_PREV   VARCHAR2,
+    P_ID     VARCHAR2
+) RETURN CLOB AS
+    V_ID        NUMBER;
+    V_RESPONSE  CLOB;
+BEGIN
+    BEGIN
+        IF P_FIRST = '1' THEN
+            SELECT MIN(ROLE_ID)
+            INTO V_ID
+            FROM setup_app_role;
+        ELSIF P_LAST = '1' THEN
+            SELECT MAX(ROLE_ID)
+            INTO V_ID
+            FROM setup_app_role;
+        ELSIF P_NEXT = '1' THEN
+            SELECT ROLE_ID
+            INTO V_ID
+            FROM setup_app_role
+            WHERE ROLE_ID > P_ID
+            ORDER BY ROLE_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF P_PREV = '1' THEN
+            SELECT ROLE_ID
+            INTO V_ID
+            FROM setup_app_role
+            WHERE ROLE_ID < P_ID
+            ORDER BY ROLE_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ID := P_ID;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'role_id'          IS role_id,
+                    'role_name'        IS role_name,
+                    'created_by'       IS created_by,
+                    'created_at'       IS created_at,
+                    'modified_by'      IS modified_by,
+                    'modified_at'      IS modified_at,
+                    'company_id'       IS company_id,
+                    'role_name_en'     IS role_name_en
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM setup_app_role INV
+        WHERE ROLE_ID = V_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_SAFE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_SAFE" (
+    P_FIRST  VARCHAR2,
+    P_LAST   VARCHAR2,
+    P_NEXT   VARCHAR2,
+    P_PREV   VARCHAR2,
+    P_ID     VARCHAR2
+) RETURN CLOB AS
+    V_ID        NUMBER;
+    V_RESPONSE  CLOB;
+BEGIN
+    BEGIN
+        IF P_FIRST = '1' THEN
+            SELECT MIN(safe_id)
+            INTO V_ID
+            FROM setup_safe;
+        ELSIF P_LAST = '1' THEN
+            SELECT MAX(safe_id)
+            INTO V_ID
+            FROM setup_safe;
+        ELSIF P_NEXT = '1' THEN
+            SELECT safe_id
+            INTO V_ID
+            FROM setup_safe
+            WHERE safe_id > P_ID
+            ORDER BY safe_id ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF P_PREV = '1' THEN
+            SELECT safe_id
+            INTO V_ID
+            FROM setup_safe
+            WHERE safe_id < P_ID
+            ORDER BY safe_id DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ID := P_ID;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'safe_id'           IS safe_id,
+                    'safe_name_ar'      IS safe_name_ar,
+                    'branch_id'         IS branch_id,
+                    'account_id'        IS account_id,
+                    'note'              IS note,
+                    'is_default'        IS is_default,
+                    'for_all_branches'  IS for_all_branches,
+                    'status'            IS status,
+                    'company_id'        IS company_id,
+                    'safe_name_en'      IS safe_name_en
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM setup_safe INV
+        WHERE safe_id = V_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
 --  DDL for Function GET_SALE_INVOICE
 --------------------------------------------------------
 
@@ -1562,6 +1936,135 @@ BEGIN
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             return NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_STORE
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_STORE" (
+    P_FIRST  VARCHAR2,
+    P_LAST   VARCHAR2,
+    P_NEXT   VARCHAR2,
+    P_PREV   VARCHAR2,
+    P_ID     VARCHAR2
+) RETURN CLOB AS
+    V_ID        NUMBER;
+    V_RESPONSE  CLOB;
+BEGIN
+    BEGIN
+        IF P_FIRST = '1' THEN
+            SELECT MIN(store_id)
+            INTO V_ID
+            FROM setup_store;
+        ELSIF P_LAST = '1' THEN
+            SELECT MAX(store_id)
+            INTO V_ID
+            FROM setup_store;
+        ELSIF P_NEXT = '1' THEN
+            SELECT store_id
+            INTO V_ID
+            FROM setup_store
+            WHERE store_id > P_ID
+            ORDER BY store_id ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF P_PREV = '1' THEN
+            SELECT store_id
+            INTO V_ID
+            FROM setup_store
+            WHERE store_id < P_ID
+            ORDER BY store_id DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ID := P_ID;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'store_id'      IS store_id,
+                    'store_name_ar' IS store_name_ar,
+                    'branch_id'     IS branch_id,
+                    'note'          IS note,
+                    'status'        IS status,
+                    'company_id'    IS company_id,
+                    'store_name_en' IS store_name_en
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM setup_store INV
+        WHERE store_id = V_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
+    END;
+    RETURN V_RESPONSE;
+
+END;
+
+/
+--------------------------------------------------------
+--  DDL for Function GET_USER
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE FUNCTION "GET_USER" (
+    P_FIRST  VARCHAR2,
+    P_LAST   VARCHAR2,
+    P_NEXT   VARCHAR2,
+    P_PREV   VARCHAR2,
+    P_ID     VARCHAR2
+) RETURN CLOB AS
+    V_ID        NUMBER;
+    V_RESPONSE  CLOB;
+BEGIN
+    BEGIN
+        IF P_FIRST = '1' THEN
+            SELECT MIN(USER_ID)
+            INTO V_ID
+            FROM SETUP_APP_USER;
+        ELSIF P_LAST = '1' THEN
+            SELECT MAX(USER_ID)
+            INTO V_ID
+            FROM SETUP_APP_USER;
+        ELSIF P_NEXT = '1' THEN
+            SELECT USER_ID
+            INTO V_ID
+            FROM SETUP_APP_USER
+            WHERE USER_ID > P_ID
+            ORDER BY USER_ID ASC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSIF P_PREV = '1' THEN
+            SELECT USER_ID
+            INTO V_ID
+            FROM SETUP_APP_USER
+            WHERE USER_ID < P_ID
+            ORDER BY USER_ID DESC
+            FETCH NEXT 1 ROWS ONLY;
+        ELSE
+            V_ID := P_ID;
+        END IF;
+        SELECT
+                JSON_OBJECT(
+                    'user_id'           IS user_id,
+                    'user_name'         IS user_name,
+                    'created_by'        IS created_by,
+                    'created_at'        IS created_at,
+                    'modified_by'       IS modified_by,
+                    'modified_at'       IS modified_at,
+                    'status'            IS status,
+                    'user_type'         IS user_type,
+                    'company_id'        IS company_id,
+                    'prefered_lang_id'  IS prefered_lang_id
+                RETURNING CLOB) JSON_DATA
+
+        INTO V_RESPONSE
+        FROM SETUP_APP_USER INV
+        WHERE USER_ID = V_ID;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
     END;
     RETURN V_RESPONSE;
 
@@ -3383,6 +3886,7 @@ BEGIN
 
         FOR REC IN (
             SELECT
+                I.INVOICE_ID,
                 I.INVOICE_NO,
 				TO_CHAR(I.INVOICE_DATE,'DD-MM-YYYY') AS INVOICE_DATE,
                 I.BRANCH_ID,
@@ -3415,7 +3919,7 @@ BEGIN
         V_SALES_PUR_RETURN_INV_SUMMARY_REC.PROVIDER_NAME_EN            :=REC.PROVIDER_NAME_EN ;
         V_SALES_PUR_RETURN_INV_SUMMARY_REC.INVOICE_TYPE                :=REC.INVOICE_TYPE ;
         V_SALES_PUR_RETURN_INV_SUMMARY_REC.PROVIDER_ID                 :=REC.PROVIDER_ID ;
-        V_SALES_PUR_RETURN_INV_SUMMARY_REC.PROVIDER_TAX_NO                 :=REC.TAX_NO ;
+        V_SALES_PUR_RETURN_INV_SUMMARY_REC.PROVIDER_TAX_NO             :=REC.TAX_NO ;
 		V_SALES_PUR_RETURN_INV_SUMMARY_REC.BRANCH_NAME_AR              :=REC.BRANCH_NAME_AR ;
 		V_SALES_PUR_RETURN_INV_SUMMARY_REC.BRANCH_NAME_EN              :=REC.BRANCH_NAME_EN ;
 		V_SALES_PUR_RETURN_INV_SUMMARY_REC.BRANCH_ID                   :=REC.BRANCH_ID ;
@@ -3435,6 +3939,7 @@ BEGIN
 		FROM
 			ADMIN_LIST_ITEM
 		WHERE LIST_ID = 5 AND ITEM_NO = REC.INVOICE_TYPE;
+            BEGIN
             SELECT
                INVOICE_NO,
 			   TO_CHAR(INVOICE_DATE,'DD-MM-YYYY') 
@@ -3443,6 +3948,10 @@ BEGIN
 		      V_SALES_PUR_RETURN_INV_SUMMARY_REC.PURCHASE_INV_DATE          
             FROM SALES_PURCHASE_INV
 			WHERE INVOICE_ID=REC.PURCHASE_INV_ID;
+            EXCEPTION
+            WHEN OTHERS THEN
+            NULL;
+            END;
             V_SALES_PUR_RETURN_INV_SUMMARY_TBL.EXTEND;
             V_INDEX := V_INDEX+1;
             V_SALES_PUR_RETURN_INV_SUMMARY_TBL(V_INDEX) := V_SALES_PUR_RETURN_INV_SUMMARY_REC;
@@ -3450,7 +3959,6 @@ BEGIN
 
     RETURN V_SALES_PUR_RETURN_INV_SUMMARY_TBL;
 END SALES_PUR_RETURN_INV_SUMMARY_R;
-
 
 /
 --------------------------------------------------------
@@ -4066,7 +4574,7 @@ BEGIN
         SUM(nvl(DEBIT,0)) PRE_DEBIT,
         SUM(nvl(CREDIT,0)) PRE_CREDIT
         from acc_ledger
-        WHERE COMPANY_ID = P_COMPANY_ID and (COST_CNTR_ID=P_COST_CNTR_ID or P_COST_CNTR_ID=0)and JOURNAL_DATE < TO_DATE(P_FROM_DATE,'DD-MM-YYYY')
+        WHERE COMPANY_ID = P_COMPANY_ID and (COST_CNTR_ID=NVL(P_COST_CNTR_ID,0) or NVL(P_COST_CNTR_ID,0)=0)and JOURNAL_DATE < TO_DATE(P_FROM_DATE,'DD-MM-YYYY')
         GROUP BY ACCOUNT_ID
         ),
         in_period as (
