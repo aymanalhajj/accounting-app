@@ -1,4 +1,7 @@
 --------------------------------------------------------
+--  File created - الثلاثاء-نوفمبر-19-2024   
+--------------------------------------------------------
+--------------------------------------------------------
 --  DDL for Package Body ACC_ACCOUNTS_TAPI
 --------------------------------------------------------
 
@@ -63,6 +66,7 @@
     END;
 
 END ACC_ACCOUNTS_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -248,6 +252,7 @@ END GET_ACCOUNT_NO;
 
 END ACC_ACCOUNTS_XAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body ACC_JOURNAL_DTL_TAPI
@@ -323,6 +328,7 @@ END ACC_ACCOUNTS_XAPI;
 
 END ACC_JOURNAL_DTL_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body ACC_JOURNAL_TAPI
@@ -368,7 +374,7 @@ END ACC_JOURNAL_DTL_TAPI;
             JOURNAL_DATE = P_JOURNAL_DATE,
             NOTE = P_NOTE,
             COMPANY_ID = P_COMPANY_ID
-            
+
         WHERE
             ACC_JOURNAL_ID = P_ACC_JOURNAL_ID;
 
@@ -387,12 +393,12 @@ END ACC_JOURNAL_DTL_TAPI;
         INTO V_IS_POSTED
         FROM ACC_JOURNAL
         WHERE ACC_JOURNAL_ID  = P_ACC_JOURNAL_ID AND POSTED = 1;
-            
+
         SELECT COMPANY_ID,JOURNAL_DATE,JOURNAL_TYPE
         INTO V_COMPANY_ID,V_JOURNAL_DATE,V_JOURNAL_TYPE
         FROM ACC_JOURNAL
         WHERE ACC_JOURNAL_ID  = P_ACC_JOURNAL_ID;
-        
+
         IF V_IS_POSTED = 0 THEN
             FOR REC IN (
                 SELECT
@@ -472,6 +478,7 @@ END ACC_JOURNAL_DTL_TAPI;
 
 END ACC_JOURNAL_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body ACC_LEDGER_TAPI
@@ -517,6 +524,7 @@ END ACC_JOURNAL_TAPI;
     END;
 
 END ACC_LEDGER_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -618,6 +626,7 @@ END ACC_LEDGER_TAPI;
     END;
 
 END ACC_VOUCHER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -892,6 +901,7 @@ END ACC_VOUCHER_DTL_TAPI;
 
 END ACC_VOUCHER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body ADMIN_COMPANY_TAPI
@@ -1021,6 +1031,7 @@ END ACC_VOUCHER_TAPI;
 
 end ADMIN_COMPANY_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body ADMIN_USER_SESSION_TAPI
@@ -1094,6 +1105,7 @@ end ADMIN_COMPANY_TAPI;
 
 END ADMIN_USER_SESSION_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body AUTH
@@ -1159,7 +1171,7 @@ END ADMIN_USER_SESSION_TAPI;
         WHERE
                 PASS = P_PASSWORD
             AND UPPER(USER_NAME) = UPPER(P_USERNAME);
-    
+
         IF V_COUNT > 0 THEN
             RETURN TRUE;
         ELSE
@@ -1195,6 +1207,7 @@ END ADMIN_USER_SESSION_TAPI;
     END;
 END auth;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body COMPUTE
@@ -1222,7 +1235,7 @@ END auth;
             TOTAL_AMOUNT               => 0,
             PRE_DISCOUNT_VAT_VALUE     => 0
         );
-        
+
         V_INV_DTL_REC.QUANTITY := P_QUANTITY;
         IF NVL(V_INV_DTL_REC.QUANTITY,0) = 0 THEN
             V_INV_DTL_REC.QUANTITY                  := 1;
@@ -1243,9 +1256,9 @@ END auth;
         V_INV_DTL_TBL.EXTEND;
         V_INV_DTL_TBL(1) := V_INV_DTL_REC;
         RETURN V_INV_DTL_TBL;
-        
+
     END;
-    
+
     FUNCTION CALC_VAT (
         P_BASE_AMOUNT           NUMBER,
         P_AMOUNT_WITH_VAT       NUMBER,
@@ -1260,7 +1273,7 @@ END auth;
             VAT             => 0,
             AMOUNT_WITH_VAT => 0
         );
-        
+
         IF NVL(P_BASE_AMOUNT,0) > 0 THEN
             V_AMOUNT_VAT_REC.AMOUNT            := ROUND(P_BASE_AMOUNT,9);
         ELSIF NVL(P_AMOUNT_WITH_VAT,0) > 0 THEN
@@ -1268,19 +1281,20 @@ END auth;
         END IF;
         V_AMOUNT_VAT_REC.VAT                := ROUND(V_AMOUNT_VAT_REC.AMOUNT*NVL(P_VAT_PERCENTAGE,0)/100,9);
         V_AMOUNT_VAT_REC.AMOUNT_WITH_VAT    := ROUND(V_AMOUNT_VAT_REC.AMOUNT+V_AMOUNT_VAT_REC.VAT,9);        
-        
+
         IF NVL(P_AMOUNT_WITH_VAT,0) > 0 THEN
             V_DEF := P_AMOUNT_WITH_VAT-V_AMOUNT_VAT_REC.AMOUNT_WITH_VAT;
             V_AMOUNT_VAT_REC.AMOUNT := V_AMOUNT_VAT_REC.AMOUNT+V_DEF;
             V_AMOUNT_VAT_REC.AMOUNT_WITH_VAT    := ROUND(V_AMOUNT_VAT_REC.AMOUNT+V_AMOUNT_VAT_REC.VAT,9);        
         END IF;
-        
+
         V_AMOUNT_VAT_TBL.EXTEND;
         V_AMOUNT_VAT_TBL(1) := V_AMOUNT_VAT_REC;
         RETURN V_AMOUNT_VAT_TBL;
-        
+
     END;
 END COMPUTE;
+
 
 /
 --------------------------------------------------------
@@ -1353,7 +1367,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 5,P_LANG => P_LANG)||'"
             }'));
         END IF;        
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1386,9 +1400,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 6,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1414,9 +1428,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 7,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1470,9 +1484,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 11,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1505,8 +1519,8 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 20,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1539,9 +1553,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 9,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1567,9 +1581,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 3,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1602,9 +1616,9 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 13,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1623,7 +1637,7 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
+
         IF P_DATA.GET_STRING('country_id') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1645,7 +1659,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 14,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1664,7 +1678,7 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
+
         IF P_DATA.GET_STRING('invoice_date') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1728,7 +1742,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 28,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1738,7 +1752,7 @@ END COMPUTE;
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 1,P_LANG => P_LANG));
         END IF;
     END PURCHASE_INV_VALIDATE;        
-    
+
     PROCEDURE PURCHASE_ORDER_VALIDATE (
         P_DATA    IN   JSON_OBJECT_T,
         P_LANG    IN   NUMBER,
@@ -1748,7 +1762,7 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
+
         IF P_DATA.GET_STRING('order_date') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1812,7 +1826,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 28,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1831,7 +1845,7 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
+
         IF P_DATA.GET_STRING('invoice_date') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1895,7 +1909,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 28,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1914,8 +1928,8 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
-        
+
+
         IF P_DATA.GET_STRING('invoice_date') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1972,7 +1986,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 27,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -1991,7 +2005,7 @@ END COMPUTE;
     BEGIN
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
-        
+
         IF P_DATA.GET_STRING('order_date') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -1999,7 +2013,7 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 18,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
+
         IF P_DATA.GET_STRING('store_id') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -2014,8 +2028,8 @@ END COMPUTE;
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 27,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -2025,7 +2039,7 @@ END COMPUTE;
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 1,P_LANG => P_LANG));
         END IF;
     END STOCKOUT_ORDER_VALIDATE;
-    
+
     PROCEDURE CUSTOMER_VALIDATE (
         P_DATA    IN   JSON_OBJECT_T,
         P_LANG    IN   NUMBER,
@@ -2213,7 +2227,7 @@ END COMPUTE;
         P_ERROR_ARR := JSON_ARRAY_T();
         P_RESULT := JSON_OBJECT_T();
 
-    
+
         IF P_DATA.GET_STRING('status') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -2504,9 +2518,9 @@ PROCEDURE SETUP_TAX_GROUP_VALIDATE (
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 33,P_LANG => P_LANG)||'"
             }'));
         END IF;
-        
-        
-        
+
+
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -2690,7 +2704,7 @@ PROCEDURE SETUP_PROD_GROUP_VALIDATE (
         P_RESULT := JSON_OBJECT_T();
 
 
-        
+
         IF P_DATA.GET_STRING('status') IS NULL THEN
             P_ERROR_ARR.APPEND(JSON_OBJECT_T('
             {
@@ -2705,7 +2719,7 @@ PROCEDURE SETUP_PROD_GROUP_VALIDATE (
                 "message":"'||GET_ERROR_MSG(P_MSG_ID => 3,P_LANG => P_LANG)||'"
             }'));
         END IF;
-         
+
         IF P_ERROR_ARR.get_size > 0 THEN
             P_RESULT.PUT('status','failed');
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 2,P_LANG => P_LANG));
@@ -2715,7 +2729,7 @@ PROCEDURE SETUP_PROD_GROUP_VALIDATE (
             P_RESULT.PUT('message',GET_ERROR_MSG(P_MSG_ID => 1,P_LANG => P_LANG));
         END IF;
     END SETUP_PROD_GROUP_VALIDATE;
-    
+
    PROCEDURE SALES_RENT_INV_VALIDATE (
         P_DATA    IN   JSON_OBJECT_T,
         P_LANG    IN   NUMBER,
@@ -2795,6 +2809,7 @@ PROCEDURE SETUP_PROD_GROUP_VALIDATE (
 
 END DATA_VALIDATION;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body FILE_UTILE
@@ -2838,6 +2853,7 @@ END DATA_VALIDATION;
         UTL_FILE.FREMOVE (P_FOLDER_NAME, P_FILE_NAME );
     END DELETE_FILE;
 END FILE_UTILE;
+
 
 /
 --------------------------------------------------------
@@ -3031,8 +3047,8 @@ END FILE_UTILE;
             WHERE INVOICE_ID = P_INVOICE_ID;
         END LOOP;
     END SALE_INV_JOURNAL;
-    
-    
+
+
     PROCEDURE SALE_RETURN_INV_JOURNAL (
         P_INVOICE_ID      IN  NUMBER
     ) AS
@@ -3218,7 +3234,7 @@ END FILE_UTILE;
             WHERE INVOICE_ID = P_INVOICE_ID;
         END LOOP;
     END SALE_RETURN_INV_JOURNAL;
-    
+
     PROCEDURE PUR_INV_JOURNAL (
         P_INVOICE_ID      IN  NUMBER
     ) AS
@@ -3404,7 +3420,7 @@ END FILE_UTILE;
             WHERE INVOICE_ID = P_INVOICE_ID;
         END LOOP;
     END PUR_INV_JOURNAL;
-    
+
     PROCEDURE PUR_RETURN_INV_JOURNAL (
         P_INVOICE_ID      IN  NUMBER
     ) AS
@@ -3629,7 +3645,7 @@ END FILE_UTILE;
             INTO P_LANG_ID
             FROM SETUP_APP_USER
             WHERE USER_ID = INV.USER_ID;
-            
+
             SELECT MAKE_NOTE.GET_STOCK_JOURNAL_NOTE(
                 P_LANG_ID       => P_LANG_ID,
                 P_JOURNAL_TYPE  => 10,
@@ -3652,8 +3668,8 @@ END FILE_UTILE;
             V_INDEX := V_INDEX+1;
             V_JOURNAL_TABLE.EXTEND;
             V_JOURNAL_TABLE(V_INDEX) := V_JOURNAL_REC;
-            
-            
+
+
             V_JOURNAL_REC.DEBIT := INV.TOTAL_AMOUNT;
             V_JOURNAL_REC.CREDIT := 0;
             V_JOURNAL_REC.ACCOUNT_ID := INV.ACCOUNT_ID;
@@ -3708,7 +3724,7 @@ END FILE_UTILE;
             INTO P_LANG_ID
             FROM SETUP_APP_USER
             WHERE USER_ID = INV.USER_ID;
-            
+
             SELECT MAKE_NOTE.GET_STOCK_JOURNAL_NOTE(
                 P_LANG_ID       => P_LANG_ID,
                 P_JOURNAL_TYPE  => 12,
@@ -3731,8 +3747,8 @@ END FILE_UTILE;
             V_INDEX := V_INDEX+1;
             V_JOURNAL_TABLE.EXTEND;
             V_JOURNAL_TABLE(V_INDEX) := V_JOURNAL_REC;
-            
-            
+
+
             V_JOURNAL_REC.DEBIT := 0;
             V_JOURNAL_REC.CREDIT := INV.TOTAL_AMOUNT;
             V_JOURNAL_REC.ACCOUNT_ID := INV.ACCOUNT_ID;
@@ -3756,6 +3772,7 @@ END FILE_UTILE;
     END STOCKIN_ORDER_JOURNAL;
 
 END INV_JOURNAL;
+
 
 /
 --------------------------------------------------------
@@ -3935,6 +3952,7 @@ END INV_JOURNAL;
     END GET_STORE_TRANSFER_ID;
 END MAKE_ID;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body MAKE_NO
@@ -3958,7 +3976,7 @@ END MAKE_ID;
         V_INV_NO := P_COMPANY_ID||P_BRANCH_ID||V_INV_NO;
         RETURN V_INV_NO;
     END GET_PURCHASE_INV_NO;    
-    
+
     FUNCTION GET_RENT_INV_NO (
         P_COMPANY_ID NUMBER,
         P_BRANCH_ID   NUMBER
@@ -4114,6 +4132,7 @@ END MAKE_ID;
 
 END MAKE_NO;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body MAKE_NOTE
@@ -4136,12 +4155,12 @@ END MAKE_NO;
         INTO V_JOURNAL_NOTE
         FROM ADMIN_LIST_ITEM 
         WHERE LIST_ID = 7 AND ITEM_NO = P_JOURNAL_TYPE;
-        
+
         SELECT DECODE(P_LANG_ID,1,ITEM_NOTE_EN,ITEM_NOTE_AR) 
         INTO P_INV_TYPE_NOTE
         FROM ADMIN_LIST_ITEM 
         WHERE LIST_ID = 5 AND ITEM_NO = P_INVOICE_TYPE;
-        
+
         SELECT  
                 DECODE(P_FOR_VAT,1,DECODE(P_LANG_ID,1,'VAT of ','ض. القيمة المضافة '),'')  
                 || V_JOURNAL_NOTE || ' ' 
@@ -4167,7 +4186,7 @@ END MAKE_NO;
         INTO V_JOURNAL_NOTE
         FROM ADMIN_LIST_ITEM 
         WHERE LIST_ID = 7 AND ITEM_NO = P_JOURNAL_TYPE;
-        
+
         SELECT  
                 V_JOURNAL_NOTE
                 || DECODE(P_LANG_ID,1,' of Id:',' رقم:')  
@@ -4178,6 +4197,7 @@ END MAKE_NO;
     END GET_STOCK_JOURNAL_NOTE;
 
 END MAKE_NOTE;
+
 
 /
 --------------------------------------------------------
@@ -4230,6 +4250,7 @@ BEGIN
  END VRFY_PWD_HMAC;
 
 END PWD_SECURITY;
+
 
 /
 --------------------------------------------------------
@@ -4356,6 +4377,7 @@ END PWD_SECURITY;
 
 END SALES_CLIENT_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_INV_DTL_TAPI
@@ -4470,6 +4492,7 @@ END SALES_CLIENT_TAPI;
     END DEL_DTL;
 
 END SALES_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -4644,6 +4667,62 @@ END SALES_INV_DTL_TAPI;
 
 END SALES_INV_TAPI;
 
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SALES_PRODUCT_BARCODES_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SALES_PRODUCT_BARCODES_TAPI" IS
+-- insert
+    PROCEDURE INSERT_PRODUCT_BARCODES (
+        P_PRODUCT_BARCODE_ID IN OUT SALES_PRODUCT_BARCODES.PRODUCT_BARCODE_ID%TYPE,
+        P_BARCODE            IN SALES_PRODUCT_BARCODES.BARCODE%TYPE DEFAULT NULL,
+        P_PRODUCT_ID         IN SALES_PRODUCT_BARCODES.PRODUCT_ID%TYPE DEFAULT NULL,
+        P_COMPANY_ID         IN SALES_PRODUCT_BARCODES.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO SALES_PRODUCT_BARCODES (
+            BARCODE,
+            PRODUCT_ID,
+            COMPANY_ID
+        ) VALUES (
+            P_BARCODE,
+            P_PRODUCT_ID,
+            P_COMPANY_ID
+        )RETURNING PRODUCT_BARCODE_ID INTO P_PRODUCT_BARCODE_ID;
+
+    END;
+-- update
+    PROCEDURE UPDATE_PRODUCT_BARCODES (
+        P_PRODUCT_BARCODE_ID IN SALES_PRODUCT_BARCODES.PRODUCT_BARCODE_ID%TYPE,
+        P_BARCODE            IN SALES_PRODUCT_BARCODES.BARCODE%TYPE DEFAULT NULL,
+        P_PRODUCT_ID         IN SALES_PRODUCT_BARCODES.PRODUCT_ID%TYPE DEFAULT NULL,
+        P_COMPANY_ID         IN SALES_PRODUCT_BARCODES.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        UPDATE SALES_PRODUCT_BARCODES
+        SET
+            BARCODE = P_BARCODE,
+            PRODUCT_ID = P_PRODUCT_ID,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            PRODUCT_BARCODE_ID = P_PRODUCT_BARCODE_ID;
+
+    END;
+-- del
+    PROCEDURE DELETE_PRODUCT_BARCODES (
+        P_PRODUCT_BARCODE_ID IN SALES_PRODUCT_BARCODES.PRODUCT_BARCODE_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SALES_PRODUCT_BARCODES
+        WHERE
+            PRODUCT_BARCODE_ID = P_PRODUCT_BARCODE_ID;
+
+    END;
+
+END SALES_PRODUCT_BARCODES_TAPI;
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_PRODUCT_FILES_TAPI
@@ -4717,6 +4796,192 @@ END SALES_INV_TAPI;
     END;
 
 END SALES_PRODUCT_FILES_TAPI;
+
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SALES_PRODUCT_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SALES_PRODUCT_TAPI" IS
+-- insert
+    PROCEDURE INSERT_PRODUCT (
+        P_PRODUCT_ID       IN OUT SALES_PRODUCT.PRODUCT_ID%TYPE,
+        P_PRODUCT_NAME_AR  IN SALES_PRODUCT.PRODUCT_NAME_AR%TYPE DEFAULT NULL,
+        P_TAX_VALUE        IN SALES_PRODUCT.TAX_VALUE%TYPE DEFAULT NULL,
+        P_SELL_PRICE       IN SALES_PRODUCT.SELL_PRICE%TYPE DEFAULT NULL,
+        P_BARCODE          IN SALES_PRODUCT.BARCODE%TYPE DEFAULT NULL,
+        P_PRODUCT_GROUP_ID IN SALES_PRODUCT.PRODUCT_GROUP_ID%TYPE DEFAULT NULL,
+        P_PROVIDER_ID      IN SALES_PRODUCT.PROVIDER_ID%TYPE DEFAULT NULL,
+        P_DEFAULT_UNIT_ID  IN SALES_PRODUCT.DEFAULT_UNIT_ID%TYPE DEFAULT NULL,
+        P_TYPE_ID          IN SALES_PRODUCT.TYPE_ID%TYPE DEFAULT NULL,
+        P_PRODUCT_STATUS   IN SALES_PRODUCT.PRODUCT_STATUS%TYPE DEFAULT NULL,
+        P_PRODUCT_NO       IN SALES_PRODUCT.PRODUCT_NO%TYPE DEFAULT NULL,
+        P_PRODUCT_NAME_EN  IN SALES_PRODUCT.PRODUCT_NAME_EN%TYPE DEFAULT NULL,
+        P_PURCHASE_PRICE   IN SALES_PRODUCT.PURCHASE_PRICE%TYPE DEFAULT NULL,
+        P_TAX_GROUP_ID     IN SALES_PRODUCT.TAX_GROUP_ID%TYPE DEFAULT NULL,
+        P_COMPANY_ID       IN SALES_PRODUCT.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO SALES_PRODUCT (
+            PRODUCT_NAME_AR,
+            TAX_VALUE,
+            SELL_PRICE,
+            BARCODE,
+            PRODUCT_GROUP_ID,
+            PROVIDER_ID,
+            DEFAULT_UNIT_ID,
+            TYPE_ID,
+            PRODUCT_STATUS,
+            PRODUCT_NO,
+            PRODUCT_NAME_EN,
+            PURCHASE_PRICE,
+            TAX_GROUP_ID,
+            COMPANY_ID
+        ) VALUES (
+            P_PRODUCT_NAME_AR,
+            P_TAX_VALUE,
+            P_SELL_PRICE,
+            P_BARCODE,
+            P_PRODUCT_GROUP_ID,
+            P_PROVIDER_ID,
+            P_DEFAULT_UNIT_ID,
+            P_TYPE_ID,
+            P_PRODUCT_STATUS,
+            P_PRODUCT_NO,
+            P_PRODUCT_NAME_EN,
+            P_PURCHASE_PRICE,
+            P_TAX_GROUP_ID,
+            P_COMPANY_ID
+        )RETURNING PRODUCT_ID INTO P_PRODUCT_ID;
+
+    END;
+-- update
+    PROCEDURE UPDATE_PRODUCT (
+        P_PRODUCT_ID       IN SALES_PRODUCT.PRODUCT_ID%TYPE,
+        P_PRODUCT_NAME_AR  IN SALES_PRODUCT.PRODUCT_NAME_AR%TYPE DEFAULT NULL,
+        P_TAX_VALUE        IN SALES_PRODUCT.TAX_VALUE%TYPE DEFAULT NULL,
+        P_SELL_PRICE       IN SALES_PRODUCT.SELL_PRICE%TYPE DEFAULT NULL,
+        P_BARCODE          IN SALES_PRODUCT.BARCODE%TYPE DEFAULT NULL,
+        P_PRODUCT_GROUP_ID IN SALES_PRODUCT.PRODUCT_GROUP_ID%TYPE DEFAULT NULL,
+        P_PROVIDER_ID      IN SALES_PRODUCT.PROVIDER_ID%TYPE DEFAULT NULL,
+        P_DEFAULT_UNIT_ID  IN SALES_PRODUCT.DEFAULT_UNIT_ID%TYPE DEFAULT NULL,
+        P_TYPE_ID          IN SALES_PRODUCT.TYPE_ID%TYPE DEFAULT NULL,
+        P_PRODUCT_STATUS   IN SALES_PRODUCT.PRODUCT_STATUS%TYPE DEFAULT NULL,
+        P_PRODUCT_NO       IN SALES_PRODUCT.PRODUCT_NO%TYPE DEFAULT NULL,
+        P_PRODUCT_NAME_EN  IN SALES_PRODUCT.PRODUCT_NAME_EN%TYPE DEFAULT NULL,
+        P_PURCHASE_PRICE   IN SALES_PRODUCT.PURCHASE_PRICE%TYPE DEFAULT NULL,
+        P_TAX_GROUP_ID     IN SALES_PRODUCT.TAX_GROUP_ID%TYPE DEFAULT NULL,
+        P_COMPANY_ID       IN SALES_PRODUCT.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        UPDATE SALES_PRODUCT
+        SET
+            PRODUCT_NAME_AR = P_PRODUCT_NAME_AR,
+            TAX_VALUE = P_TAX_VALUE,
+            SELL_PRICE = P_SELL_PRICE,
+            BARCODE = P_BARCODE,
+            PRODUCT_GROUP_ID = P_PRODUCT_GROUP_ID,
+            PROVIDER_ID = P_PROVIDER_ID,
+            DEFAULT_UNIT_ID = P_DEFAULT_UNIT_ID,
+            TYPE_ID = P_TYPE_ID,
+            PRODUCT_STATUS = P_PRODUCT_STATUS,
+            PRODUCT_NO = P_PRODUCT_NO,
+            PRODUCT_NAME_EN = P_PRODUCT_NAME_EN,
+            PURCHASE_PRICE = P_PURCHASE_PRICE,
+            TAX_GROUP_ID = P_TAX_GROUP_ID,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            PRODUCT_ID = P_PRODUCT_ID;
+
+    END;
+-- del
+    PROCEDURE DELETE_PRODUCT (
+        P_PRODUCT_ID IN SALES_PRODUCT.PRODUCT_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SALES_PRODUCT
+        WHERE
+            PRODUCT_ID = P_PRODUCT_ID;
+
+    END;
+
+END SALES_PRODUCT_TAPI;
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SALES_PRODUCT_UNIT_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SALES_PRODUCT_UNIT_TAPI" IS
+-- insert
+    PROCEDURE INSERT_PRODUCT_UNIT (
+        P_PRODUCT_UNIT_ID IN OUT SALES_PRODUCT_UNIT.PRODUCT_UNIT_ID%TYPE,
+        P_UNIT_ID         IN SALES_PRODUCT_UNIT.UNIT_ID%TYPE DEFAULT NULL,
+        P_UNIT_VALUE      IN SALES_PRODUCT_UNIT.UNIT_VALUE%TYPE DEFAULT NULL,
+        P_SELL_PRICE      IN SALES_PRODUCT_UNIT.SELL_PRICE%TYPE DEFAULT NULL,
+        P_PURCHASE_PRICE  IN SALES_PRODUCT_UNIT.PURCHASE_PRICE%TYPE DEFAULT NULL,
+        P_BARCODE         IN SALES_PRODUCT_UNIT.BARCODE%TYPE DEFAULT NULL,
+        P_PRODUCT_ID      IN SALES_PRODUCT_UNIT.PRODUCT_ID%TYPE DEFAULT NULL,
+        P_COMPANY_ID      IN SALES_PRODUCT_UNIT.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO SALES_PRODUCT_UNIT (
+            UNIT_ID,
+            UNIT_VALUE,
+            SELL_PRICE,
+            PURCHASE_PRICE,
+            BARCODE,
+            PRODUCT_ID,
+            COMPANY_ID
+        ) VALUES (
+            P_UNIT_ID,
+            P_UNIT_VALUE,
+            P_SELL_PRICE,
+            P_PURCHASE_PRICE,
+            P_BARCODE,
+            P_PRODUCT_ID,
+            P_COMPANY_ID
+        )RETURNING PRODUCT_UNIT_ID INTO P_PRODUCT_UNIT_ID;
+
+    END;
+-- update
+    PROCEDURE UPDATE_PRODUCT_UNIT (
+        P_PRODUCT_UNIT_ID IN SALES_PRODUCT_UNIT.PRODUCT_UNIT_ID%TYPE,
+        P_UNIT_ID         IN SALES_PRODUCT_UNIT.UNIT_ID%TYPE DEFAULT NULL,
+        P_UNIT_VALUE      IN SALES_PRODUCT_UNIT.UNIT_VALUE%TYPE DEFAULT NULL,
+        P_SELL_PRICE      IN SALES_PRODUCT_UNIT.SELL_PRICE%TYPE DEFAULT NULL,
+        P_PURCHASE_PRICE  IN SALES_PRODUCT_UNIT.PURCHASE_PRICE%TYPE DEFAULT NULL,
+        P_BARCODE         IN SALES_PRODUCT_UNIT.BARCODE%TYPE DEFAULT NULL,
+        P_PRODUCT_ID      IN SALES_PRODUCT_UNIT.PRODUCT_ID%TYPE DEFAULT NULL,
+        P_COMPANY_ID      IN SALES_PRODUCT_UNIT.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        UPDATE SALES_PRODUCT_UNIT
+        SET
+            UNIT_ID = P_UNIT_ID,
+            UNIT_VALUE = P_UNIT_VALUE,
+            SELL_PRICE = P_SELL_PRICE,
+            PURCHASE_PRICE = P_PURCHASE_PRICE,
+            BARCODE = P_BARCODE,
+            PRODUCT_ID = P_PRODUCT_ID,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            PRODUCT_UNIT_ID = P_PRODUCT_UNIT_ID;
+
+    END;
+-- del
+    PROCEDURE DELETE_PRODUCT_UNIT (
+        P_PRODUCT_UNIT_ID IN SALES_PRODUCT_UNIT.PRODUCT_UNIT_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SALES_PRODUCT_UNIT
+        WHERE
+            PRODUCT_UNIT_ID = P_PRODUCT_UNIT_ID;
+
+    END;
+
+END SALES_PRODUCT_UNIT_TAPI;
 
 /
 --------------------------------------------------------
@@ -4845,6 +5110,7 @@ END SALES_PRODUCT_FILES_TAPI;
 
 END SALES_PROVIDER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_PURCHASE_INV_DTL_TAPI
@@ -4959,6 +5225,7 @@ END SALES_PROVIDER_TAPI;
 
     END DEL_DTL;
 END SALES_PURCHASE_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -5144,6 +5411,7 @@ END SALES_PURCHASE_INV_DTL_TAPI;
 
 END SALES_PURCHASE_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_PURCHASE_ORDER_DTL_TAPI
@@ -5258,6 +5526,7 @@ END SALES_PURCHASE_INV_TAPI;
 
     END DEL_DTL;
 END SALES_PURCHASE_ORDER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -5440,6 +5709,7 @@ END SALES_PURCHASE_ORDER_DTL_TAPI;
 
 END SALES_PURCHASE_ORDER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_PUR_RETURN_INV_DTL_TAPI
@@ -5554,6 +5824,7 @@ END SALES_PURCHASE_ORDER_TAPI;
 
     END DEL_DTL;
 END SALES_PUR_RETURN_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -5738,6 +6009,7 @@ END SALES_PUR_RETURN_INV_DTL_TAPI;
 
 END SALES_PUR_RETURN_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_RENT_INV_DTL_TAPI
@@ -5852,6 +6124,7 @@ END SALES_PUR_RETURN_INV_TAPI;
 
     END DEL_DTL;
 END SALES_RENT_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -6038,6 +6311,7 @@ END SALES_RENT_INV_DTL_TAPI;
 
 END SALES_RENT_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SALES_RETURN_INV_DTL_TAPI
@@ -6153,6 +6427,7 @@ END SALES_RENT_INV_TAPI;
 
     END DEL_DTL;
 end SALES_RETURN_INV_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -6332,6 +6607,7 @@ end SALES_RETURN_INV_DTL_TAPI;
 
 END SALES_RETURN_INV_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SETUP_APP_ROLE_TAPI
@@ -6410,6 +6686,7 @@ END SALES_RETURN_INV_TAPI;
    end DELETE_SETUP_APP_ROLE;
 
 end SETUP_APP_ROLE_TAPI;
+
 
 
 /
@@ -6501,6 +6778,437 @@ end SETUP_APP_ROLE_TAPI;
 end SETUP_APP_USER_TAPI;
 
 
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SETUP_BANK_EXT_ACC_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SETUP_BANK_EXT_ACC_TAPI" IS
+-- insert
+    PROCEDURE INSERT_BANK_EXT_ACC (
+        P_BANK_ACC_ID      IN out SETUP_BANK_EXT_ACC.BANK_ACC_ID%TYPE,
+        P_REGION_ID        IN SETUP_BANK_EXT_ACC.REGION_ID%TYPE DEFAULT NULL,
+        P_COUNTRY_ID       IN SETUP_BANK_EXT_ACC.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_TEL_NO           IN SETUP_BANK_EXT_ACC.TEL_NO%TYPE DEFAULT NULL,
+        P_ACCOUNT_ID       IN SETUP_BANK_EXT_ACC.ACCOUNT_ID%TYPE DEFAULT NULL,
+        P_ACC_NAME_EN      IN SETUP_BANK_EXT_ACC.ACC_NAME_EN%TYPE DEFAULT NULL,
+        P_MOBILE_NO        IN SETUP_BANK_EXT_ACC.MOBILE_NO%TYPE DEFAULT NULL,
+        P_STATUS           IN SETUP_BANK_EXT_ACC.STATUS%TYPE DEFAULT NULL,
+        P_CITY_ID          IN SETUP_BANK_EXT_ACC.CITY_ID%TYPE DEFAULT NULL,
+        P_FOR_ALL_BRANCHES IN SETUP_BANK_EXT_ACC.FOR_ALL_BRANCHES%TYPE DEFAULT NULL,
+        P_ACC_NAME_AR      IN SETUP_BANK_EXT_ACC.ACC_NAME_AR%TYPE DEFAULT NULL,
+        P_NOTE             IN SETUP_BANK_EXT_ACC.NOTE%TYPE DEFAULT NULL,
+        P_COMPANY_ID       IN SETUP_BANK_EXT_ACC.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO SETUP_BANK_EXT_ACC (
+            REGION_ID,
+            COUNTRY_ID,
+            TEL_NO,
+            ACCOUNT_ID,
+            ACC_NAME_EN,
+            MOBILE_NO,
+            STATUS,
+            CITY_ID,
+            FOR_ALL_BRANCHES,
+            ACC_NAME_AR,
+            NOTE,
+            COMPANY_ID
+        ) VALUES (
+            P_REGION_ID,
+            P_COUNTRY_ID,
+            P_TEL_NO,
+            P_ACCOUNT_ID,
+            P_ACC_NAME_EN,
+            P_MOBILE_NO,
+            P_STATUS,
+            P_CITY_ID,
+            P_FOR_ALL_BRANCHES,
+            P_ACC_NAME_AR,
+            P_NOTE,
+            P_COMPANY_ID
+        )returning BANK_ACC_ID into  P_BANK_ACC_ID;
+
+    END;
+-- update
+    PROCEDURE UPDATE_BANK_EXT_ACC (
+        P_BANK_ACC_ID      IN SETUP_BANK_EXT_ACC.BANK_ACC_ID%TYPE,
+        P_REGION_ID        IN SETUP_BANK_EXT_ACC.REGION_ID%TYPE DEFAULT NULL,
+        P_COUNTRY_ID       IN SETUP_BANK_EXT_ACC.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_TEL_NO           IN SETUP_BANK_EXT_ACC.TEL_NO%TYPE DEFAULT NULL,
+        P_ACCOUNT_ID       IN SETUP_BANK_EXT_ACC.ACCOUNT_ID%TYPE DEFAULT NULL,
+        P_ACC_NAME_EN      IN SETUP_BANK_EXT_ACC.ACC_NAME_EN%TYPE DEFAULT NULL,
+        P_MOBILE_NO        IN SETUP_BANK_EXT_ACC.MOBILE_NO%TYPE DEFAULT NULL,
+        P_STATUS           IN SETUP_BANK_EXT_ACC.STATUS%TYPE DEFAULT NULL,
+        P_CITY_ID          IN SETUP_BANK_EXT_ACC.CITY_ID%TYPE DEFAULT NULL,
+        P_FOR_ALL_BRANCHES IN SETUP_BANK_EXT_ACC.FOR_ALL_BRANCHES%TYPE DEFAULT NULL,
+        P_ACC_NAME_AR      IN SETUP_BANK_EXT_ACC.ACC_NAME_AR%TYPE DEFAULT NULL,
+        P_NOTE             IN SETUP_BANK_EXT_ACC.NOTE%TYPE DEFAULT NULL,
+        P_COMPANY_ID       IN SETUP_BANK_EXT_ACC.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        UPDATE SETUP_BANK_EXT_ACC
+        SET
+            REGION_ID = P_REGION_ID,
+            COUNTRY_ID = P_COUNTRY_ID,
+            TEL_NO = P_TEL_NO,
+            ACCOUNT_ID = P_ACCOUNT_ID,
+            ACC_NAME_EN = P_ACC_NAME_EN,
+            MOBILE_NO = P_MOBILE_NO,
+            STATUS = P_STATUS,
+            CITY_ID = P_CITY_ID,
+            FOR_ALL_BRANCHES = P_FOR_ALL_BRANCHES,
+            ACC_NAME_AR = P_ACC_NAME_AR,
+            NOTE = P_NOTE,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            BANK_ACC_ID = P_BANK_ACC_ID;
+
+    END;
+-- del
+    PROCEDURE DELETE_BANK_EXT_ACC (
+        P_BANK_ACC_ID IN SETUP_BANK_EXT_ACC.BANK_ACC_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SETUP_BANK_EXT_ACC
+        WHERE
+            BANK_ACC_ID = P_BANK_ACC_ID;
+
+    END;
+
+END SETUP_BANK_EXT_ACC_TAPI;
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SETUP_BRANCH_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SETUP_BRANCH_TAPI" IS
+-- insert
+    PROCEDURE INSERT_BRANCH (
+        P_REGION_ID        IN SETUP_BRANCH.REGION_ID%TYPE DEFAULT NULL,
+        P_TAX_NO           IN SETUP_BRANCH.TAX_NO%TYPE DEFAULT NULL,
+        P_COUNTRY_ID       IN SETUP_BRANCH.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_SREET            IN SETUP_BRANCH.SREET%TYPE DEFAULT NULL,
+        P_TEL_NO           IN SETUP_BRANCH.TEL_NO%TYPE DEFAULT NULL,
+        P_NAME_AR          IN SETUP_BRANCH.NAME_AR%TYPE DEFAULT NULL,
+        P_EMAIL            IN SETUP_BRANCH.EMAIL%TYPE DEFAULT NULL,
+        P_COMERCIAL_REC_NO IN SETUP_BRANCH.COMERCIAL_REC_NO%TYPE DEFAULT NULL,
+        P_MOBILE_NO        IN SETUP_BRANCH.MOBILE_NO%TYPE DEFAULT NULL,
+        P_NAME_EN          IN SETUP_BRANCH.NAME_EN%TYPE DEFAULT NULL,
+        P_CITY_ID          IN SETUP_BRANCH.CITY_ID%TYPE DEFAULT NULL,
+        P_NOTE             IN SETUP_BRANCH.NOTE%TYPE DEFAULT NULL,
+        P_BUILDING_NO      IN SETUP_BRANCH.BUILDING_NO%TYPE DEFAULT NULL,
+        P_POST_CODE        IN SETUP_BRANCH.POST_CODE%TYPE DEFAULT NULL,
+        P_FAX              IN SETUP_BRANCH.FAX%TYPE DEFAULT NULL,
+        P_COMPANY_ID       IN SETUP_BRANCH.COMPANY_ID%TYPE,
+        P_BRANCH_ID        IN  OUT SETUP_BRANCH.BRANCH_ID%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO SETUP_BRANCH (
+            REGION_ID,
+            TAX_NO,
+            COUNTRY_ID,
+            SREET,
+            TEL_NO,
+            NAME_AR,
+            EMAIL,
+            COMERCIAL_REC_NO,
+            MOBILE_NO,
+            NAME_EN,
+            CITY_ID,
+            NOTE,
+            BUILDING_NO,
+            POST_CODE,
+            FAX,
+            COMPANY_ID
+        ) VALUES (
+            P_REGION_ID,
+            P_TAX_NO,
+            P_COUNTRY_ID,
+            P_SREET,
+            P_TEL_NO,
+            P_NAME_AR,
+            P_EMAIL,
+            P_COMERCIAL_REC_NO,
+            P_MOBILE_NO,
+            P_NAME_EN,
+            P_CITY_ID,
+            P_NOTE,
+            P_BUILDING_NO,
+            P_POST_CODE,
+            P_FAX,
+            P_COMPANY_ID
+        )RETURNING BRANCH_ID INTO P_BRANCH_ID;
+
+    END;
+-- update
+    PROCEDURE UPDATE_BRANCH (
+        P_REGION_ID        IN SETUP_BRANCH.REGION_ID%TYPE DEFAULT NULL,
+        P_TAX_NO           IN SETUP_BRANCH.TAX_NO%TYPE DEFAULT NULL,
+        P_COUNTRY_ID       IN SETUP_BRANCH.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_SREET            IN SETUP_BRANCH.SREET%TYPE DEFAULT NULL,
+        P_TEL_NO           IN SETUP_BRANCH.TEL_NO%TYPE DEFAULT NULL,
+        P_NAME_AR          IN SETUP_BRANCH.NAME_AR%TYPE DEFAULT NULL,
+        P_EMAIL            IN SETUP_BRANCH.EMAIL%TYPE DEFAULT NULL,
+        P_COMERCIAL_REC_NO IN SETUP_BRANCH.COMERCIAL_REC_NO%TYPE DEFAULT NULL,
+        P_MOBILE_NO        IN SETUP_BRANCH.MOBILE_NO%TYPE DEFAULT NULL,
+        P_NAME_EN          IN SETUP_BRANCH.NAME_EN%TYPE DEFAULT NULL,
+        P_CITY_ID          IN SETUP_BRANCH.CITY_ID%TYPE DEFAULT NULL,
+        P_NOTE             IN SETUP_BRANCH.NOTE%TYPE DEFAULT NULL,
+        P_BUILDING_NO      IN SETUP_BRANCH.BUILDING_NO%TYPE DEFAULT NULL,
+        P_POST_CODE        IN SETUP_BRANCH.POST_CODE%TYPE DEFAULT NULL,
+        P_FAX              IN SETUP_BRANCH.FAX%TYPE DEFAULT NULL,
+        P_COMPANY_ID       IN SETUP_BRANCH.COMPANY_ID%TYPE,
+        P_BRANCH_ID        IN SETUP_BRANCH.BRANCH_ID%TYPE
+    ) IS
+    BEGIN
+        UPDATE SETUP_BRANCH
+        SET
+            REGION_ID = P_REGION_ID,
+            TAX_NO = P_TAX_NO,
+            COUNTRY_ID = P_COUNTRY_ID,
+            SREET = P_SREET,
+            TEL_NO = P_TEL_NO,
+            NAME_AR = P_NAME_AR,
+            EMAIL = P_EMAIL,
+            COMERCIAL_REC_NO = P_COMERCIAL_REC_NO,
+            MOBILE_NO = P_MOBILE_NO,
+            NAME_EN = P_NAME_EN,
+            CITY_ID = P_CITY_ID,
+            NOTE = P_NOTE,
+            BUILDING_NO = P_BUILDING_NO,
+            POST_CODE = P_POST_CODE,
+            FAX = P_FAX,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            BRANCH_ID = P_BRANCH_ID;
+
+    END;
+-- del
+    PROCEDURE DELETE_BRANCH (
+        P_BRANCH_ID IN SETUP_BRANCH.BRANCH_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SETUP_BRANCH
+        WHERE
+            BRANCH_ID = P_BRANCH_ID;
+
+    END;
+
+END SETUP_BRANCH_TAPI;
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SETUP_CITY_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SETUP_CITY_TAPI" IS
+-- insert
+    PROCEDURE INSERT_CITY (
+        P_CITY_ID      IN OUT SETUP_CITY.CITY_ID%TYPE,
+        P_COUNTRY_ID   IN SETUP_CITY.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_STATUS       IN SETUP_CITY.STATUS%TYPE DEFAULT NULL,
+        P_CITY_NAME_AR IN SETUP_CITY.CITY_NAME_AR%TYPE DEFAULT NULL,
+        P_CITY_NAME_EN IN SETUP_CITY.CITY_NAME_EN%TYPE DEFAULT NULL,
+        P_COMPANY_ID   IN SETUP_CITY.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO SETUP_CITY (
+            COUNTRY_ID,
+            STATUS,
+            CITY_NAME_AR,
+            CITY_NAME_EN,
+            COMPANY_ID
+        ) VALUES (
+            P_COUNTRY_ID,
+            P_STATUS,
+            P_CITY_NAME_AR,
+            P_CITY_NAME_EN,
+            P_COMPANY_ID
+        )RETURNING CITY_ID INTO P_CITY_ID;
+
+    END;
+-- update
+    PROCEDURE UPDATE_CITY (
+        P_CITY_ID      IN SETUP_CITY.CITY_ID%TYPE,
+        P_COUNTRY_ID   IN SETUP_CITY.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_STATUS       IN SETUP_CITY.STATUS%TYPE DEFAULT NULL,
+        P_CITY_NAME_AR IN SETUP_CITY.CITY_NAME_AR%TYPE DEFAULT NULL,
+        P_CITY_NAME_EN IN SETUP_CITY.CITY_NAME_EN%TYPE DEFAULT NULL,
+        P_COMPANY_ID   IN SETUP_CITY.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        UPDATE SETUP_CITY
+        SET
+            COUNTRY_ID = P_COUNTRY_ID,
+            STATUS = P_STATUS,
+            CITY_NAME_AR = P_CITY_NAME_AR,
+            CITY_NAME_EN = P_CITY_NAME_EN,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            CITY_ID = P_CITY_ID;
+
+    END;
+-- del
+    PROCEDURE DELETE_CITY (
+        P_CITY_ID IN SETUP_CITY.CITY_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SETUP_CITY
+        WHERE
+            CITY_ID = P_CITY_ID;
+
+    END;
+
+END SETUP_CITY_TAPI;
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SETUP_COUNTRY_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SETUP_COUNTRY_TAPI" IS
+-- insert
+    PROCEDURE INSERT_COUNTRY (
+        P_COUNTRY_ID          IN OUT SETUP_COUNTRY.COUNTRY_ID%TYPE,
+        P_STATUS              IN SETUP_COUNTRY.STATUS%TYPE DEFAULT NULL,
+        P_NAME_EN             IN SETUP_COUNTRY.NAME_EN%TYPE DEFAULT NULL,
+        P_NATIONALITY_NAME_EN IN SETUP_COUNTRY.NATIONALITY_NAME_EN%TYPE DEFAULT NULL,
+        P_NAME_AR             IN SETUP_COUNTRY.NAME_AR%TYPE DEFAULT NULL,
+        P_COMPANY_ID          IN SETUP_COUNTRY.COMPANY_ID%TYPE,
+        P_NATIONALITY_NAME_AR IN SETUP_COUNTRY.NATIONALITY_NAME_AR%TYPE DEFAULT NULL
+    ) IS
+    BEGIN
+        INSERT INTO SETUP_COUNTRY (
+            STATUS,
+            NAME_EN,
+            NATIONALITY_NAME_EN,
+            NAME_AR,
+            COMPANY_ID,
+            NATIONALITY_NAME_AR
+        ) VALUES (
+            P_STATUS,
+            P_NAME_EN,
+            P_NATIONALITY_NAME_EN,
+            P_NAME_AR,
+            P_COMPANY_ID,
+            P_NATIONALITY_NAME_AR
+        )RETURNING COUNTRY_ID INTO P_COUNTRY_ID;
+
+    END;
+-- update
+    PROCEDURE UPDATE_COUNTRY (
+        P_COUNTRY_ID          IN SETUP_COUNTRY.COUNTRY_ID%TYPE,
+        P_STATUS              IN SETUP_COUNTRY.STATUS%TYPE DEFAULT NULL,
+        P_NAME_EN             IN SETUP_COUNTRY.NAME_EN%TYPE DEFAULT NULL,
+        P_NATIONALITY_NAME_EN IN SETUP_COUNTRY.NATIONALITY_NAME_EN%TYPE DEFAULT NULL,
+        P_NAME_AR             IN SETUP_COUNTRY.NAME_AR%TYPE DEFAULT NULL,
+        P_COMPANY_ID          IN SETUP_COUNTRY.COMPANY_ID%TYPE,
+        P_NATIONALITY_NAME_AR IN SETUP_COUNTRY.NATIONALITY_NAME_AR%TYPE DEFAULT NULL
+    ) IS
+    BEGIN
+        UPDATE SETUP_COUNTRY
+        SET
+            STATUS = P_STATUS,
+            NAME_EN = P_NAME_EN,
+            NATIONALITY_NAME_EN = P_NATIONALITY_NAME_EN,
+            NAME_AR = P_NAME_AR,
+            COMPANY_ID = P_COMPANY_ID,
+            NATIONALITY_NAME_AR = P_NATIONALITY_NAME_AR
+        WHERE
+            COUNTRY_ID = P_COUNTRY_ID;
+
+    END;
+-- del
+    PROCEDURE DELETE_COUNTRY (
+        P_COUNTRY_ID IN SETUP_COUNTRY.COUNTRY_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SETUP_COUNTRY
+        WHERE
+            COUNTRY_ID = P_COUNTRY_ID;
+
+    END;
+
+END SETUP_COUNTRY_TAPI;
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SETUP_CURRENCY_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SETUP_CURRENCY_TAPI" is
+-- insert
+    procedure INSERT_CURRENCY (
+        P_CURRENCY_ID in out SETUP_CURRENCY.CURRENCY_ID%type,
+        P_CREATED_BY  in SETUP_CURRENCY.CREATED_BY%type default null,
+        P_NAME_EN     in SETUP_CURRENCY.NAME_EN%type default null,
+        P_CREATED_AT  in SETUP_CURRENCY.CREATED_AT%type default null,
+        P_CODE_EN     in SETUP_CURRENCY.CODE_EN%type default null,
+        P_NAME_AR     in SETUP_CURRENCY.NAME_AR%type default null,
+        P_CODE_AR     in SETUP_CURRENCY.CODE_AR%type default null,
+        P_COMPANY_ID  in SETUP_CURRENCY.COMPANY_ID%type
+    ) is
+    begin
+        insert into SETUP_CURRENCY (
+            CREATED_BY,
+            NAME_EN,
+            CREATED_AT,
+            CODE_EN,
+            NAME_AR,
+            CODE_AR,
+            COMPANY_ID
+        ) values (
+            P_CREATED_BY,
+            P_NAME_EN,
+            P_CREATED_AT,
+            P_CODE_EN,
+            P_NAME_AR,
+            P_CODE_AR,
+            P_COMPANY_ID
+        )returning CURRENCY_ID into P_CURRENCY_ID;
+
+    end;
+-- update
+    procedure UPDATE_CURRENCY (
+        P_CURRENCY_ID in SETUP_CURRENCY.CURRENCY_ID%type,
+        P_MODIFIED_AT in SETUP_CURRENCY.MODIFIED_AT%type default null,
+        P_NAME_EN     in SETUP_CURRENCY.NAME_EN%type default null,
+        P_MODIFIED_BY in SETUP_CURRENCY.MODIFIED_BY%type default null,
+        P_CODE_EN     in SETUP_CURRENCY.CODE_EN%type default null,
+        P_NAME_AR     in SETUP_CURRENCY.NAME_AR%type default null,
+        P_CODE_AR     in SETUP_CURRENCY.CODE_AR%type default null,
+        P_COMPANY_ID  in SETUP_CURRENCY.COMPANY_ID%type
+    ) is
+    begin
+        update SETUP_CURRENCY
+        set
+            MODIFIED_AT = P_MODIFIED_AT,
+            NAME_EN = P_NAME_EN,
+            MODIFIED_BY = P_MODIFIED_BY,
+            CODE_EN = P_CODE_EN,
+            NAME_AR = P_NAME_AR,
+            CODE_AR = P_CODE_AR,
+            COMPANY_ID = P_COMPANY_ID
+        where
+            CURRENCY_ID = P_CURRENCY_ID;
+
+    end;
+-- del
+    procedure DELETE_CURRENCY (
+        P_CURRENCY_ID in SETUP_CURRENCY.CURRENCY_ID%type
+    ) is
+    begin
+        delete from SETUP_CURRENCY
+        where
+            CURRENCY_ID = P_CURRENCY_ID;
+
+    end;
+
+end SETUP_CURRENCY_TAPI;
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SETUP_PROD_GROUP_TAPI
@@ -6575,6 +7283,77 @@ end SETUP_APP_USER_TAPI;
 
 end SETUP_PROD_GROUP_TAPI;
 
+
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SETUP_REGION_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SETUP_REGION_TAPI" IS
+-- insert
+    PROCEDURE INSERT_REGION (
+        P_REGION_ID      IN OUT SETUP_REGION.REGION_ID%TYPE,
+        P_COUNTRY_ID     IN SETUP_REGION.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_STATUS         IN SETUP_REGION.STATUS%TYPE DEFAULT NULL,
+        P_REGION_NAME_AR IN SETUP_REGION.REGION_NAME_AR%TYPE DEFAULT NULL,
+        P_CITY_ID        IN SETUP_REGION.CITY_ID%TYPE DEFAULT NULL,
+        P_REGION_NAME_EN IN SETUP_REGION.REGION_NAME_EN%TYPE DEFAULT NULL,
+        P_COMPANY_ID     IN SETUP_REGION.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO SETUP_REGION (
+            COUNTRY_ID,
+            STATUS,
+            REGION_NAME_AR,
+            CITY_ID,
+            REGION_NAME_EN,
+            COMPANY_ID
+        ) VALUES (
+            P_COUNTRY_ID,
+            P_STATUS,
+            P_REGION_NAME_AR,
+            P_CITY_ID,
+            P_REGION_NAME_EN,
+            P_COMPANY_ID
+        )RETURNING REGION_ID INTO P_REGION_ID;
+
+    END;
+-- update
+    PROCEDURE UPDATE_REGION (
+        P_REGION_ID      IN SETUP_REGION.REGION_ID%TYPE,
+        P_COUNTRY_ID     IN SETUP_REGION.COUNTRY_ID%TYPE DEFAULT NULL,
+        P_STATUS         IN SETUP_REGION.STATUS%TYPE DEFAULT NULL,
+        P_REGION_NAME_AR IN SETUP_REGION.REGION_NAME_AR%TYPE DEFAULT NULL,
+        P_CITY_ID        IN SETUP_REGION.CITY_ID%TYPE DEFAULT NULL,
+        P_REGION_NAME_EN IN SETUP_REGION.REGION_NAME_EN%TYPE DEFAULT NULL,
+        P_COMPANY_ID     IN SETUP_REGION.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        UPDATE SETUP_REGION
+        SET
+            COUNTRY_ID = P_COUNTRY_ID,
+            STATUS = P_STATUS,
+            REGION_NAME_AR = P_REGION_NAME_AR,
+            CITY_ID = P_CITY_ID,
+            REGION_NAME_EN = P_REGION_NAME_EN,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            REGION_ID = P_REGION_ID;
+
+    END;
+-- del
+    PROCEDURE DELETE_REGION (
+        P_REGION_ID IN SETUP_REGION.REGION_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SETUP_REGION
+        WHERE
+            REGION_ID = P_REGION_ID;
+
+    END;
+
+END SETUP_REGION_TAPI;
 
 /
 --------------------------------------------------------
@@ -6675,6 +7454,7 @@ end SETUP_PROD_GROUP_TAPI;
 
 end SETUP_SAFE_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body SETUP_STORE_TAPI
@@ -6754,6 +7534,7 @@ end SETUP_SAFE_TAPI;
 
 
 end SETUP_STORE_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -6836,6 +7617,62 @@ end SETUP_STORE_TAPI;
 end SETUP_TAX_GROUP_TAPI;
 
 
+
+/
+--------------------------------------------------------
+--  DDL for Package Body SETUP_UNIT_TAPI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "SETUP_UNIT_TAPI" IS
+-- insert
+    PROCEDURE INSERT_UNIT (
+        P_UNIT_ID      IN OUT SETUP_UNIT.UNIT_ID%TYPE,
+        P_UNIT_NAME_AR IN SETUP_UNIT.UNIT_NAME_AR%TYPE DEFAULT NULL,
+        P_UNIT_NAME_EN IN SETUP_UNIT.UNIT_NAME_EN%TYPE DEFAULT NULL,
+        P_COMPANY_ID   IN SETUP_UNIT.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO SETUP_UNIT (
+            UNIT_NAME_AR,
+            UNIT_NAME_EN,
+            COMPANY_ID
+        ) VALUES (
+            P_UNIT_NAME_AR,
+            P_UNIT_NAME_EN,
+            P_COMPANY_ID
+        )RETURNING UNIT_ID INTO P_UNIT_ID;
+
+    END;
+-- update
+    PROCEDURE UPDATE_UNIT (
+        P_UNIT_ID      IN SETUP_UNIT.UNIT_ID%TYPE,
+        P_UNIT_NAME_AR IN SETUP_UNIT.UNIT_NAME_AR%TYPE DEFAULT NULL,
+        P_UNIT_NAME_EN IN SETUP_UNIT.UNIT_NAME_EN%TYPE DEFAULT NULL,
+        P_COMPANY_ID   IN SETUP_UNIT.COMPANY_ID%TYPE
+    ) IS
+    BEGIN
+        UPDATE SETUP_UNIT
+        SET
+            UNIT_NAME_AR = P_UNIT_NAME_AR,
+            UNIT_NAME_EN = P_UNIT_NAME_EN,
+            COMPANY_ID = P_COMPANY_ID
+        WHERE
+            UNIT_ID = P_UNIT_ID;
+
+    END;
+-- del
+    PROCEDURE DELETE_UNIT (
+        P_UNIT_ID IN SETUP_UNIT.UNIT_ID%TYPE
+    ) IS
+    BEGIN
+        DELETE FROM SETUP_UNIT
+        WHERE
+            UNIT_ID = P_UNIT_ID;
+
+    END;
+
+END SETUP_UNIT_TAPI;
+
 /
 --------------------------------------------------------
 --  DDL for Package Body STORE_FIRST_PERIOD_STOCK_DTL_TAPI
@@ -6915,6 +7752,7 @@ end SETUP_TAX_GROUP_TAPI;
 
     END DEL_DTL;
 END STORE_FIRST_PERIOD_STOCK_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -7039,6 +7877,7 @@ END STORE_FIRST_PERIOD_STOCK_DTL_TAPI;
 
 END STORE_FIRST_PERIOD_STOCK_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body STORE_STOCKIN_ORDER_DTL_TAPI
@@ -7073,7 +7912,7 @@ END STORE_FIRST_PERIOD_STOCK_TAPI;
         ) RETURNING DTL_ID INTO P_DTL_ID;
 
     END INSERT_STORE_STOCKIN_ORDER_DTL;
-    
+
     PROCEDURE UPDATE_STORE_STOCKIN_ORDER_DTL (
         P_DTL_ID          IN  STORE_STOCKIN_ORDER_DTL.DTL_ID%TYPE,
         P_TOTAL           IN STORE_STOCKIN_ORDER_DTL.TOTAL%TYPE DEFAULT NULL,
@@ -7096,7 +7935,7 @@ END STORE_FIRST_PERIOD_STOCK_TAPI;
             DTL_ID = P_DTL_ID;
 
     END UPDATE_STORE_STOCKIN_ORDER_DTL;
-    
+
     PROCEDURE DELETE_STORE_STOCKIN_ORDER_DTL (
         P_DTL_ID IN STORE_STOCKIN_ORDER_DTL.DTL_ID%TYPE
     ) IS
@@ -7119,6 +7958,7 @@ END STORE_FIRST_PERIOD_STOCK_TAPI;
 
     END DEL_DTL;
 END STORE_STOCKIN_ORDER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -7229,6 +8069,7 @@ END STORE_STOCKIN_ORDER_DTL_TAPI;
 
 END STORE_STOCKIN_ORDER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body STORE_STOCKOUT_ORDER_DTL_TAPI
@@ -7308,6 +8149,7 @@ END STORE_STOCKIN_ORDER_TAPI;
 
     END DEL_DTL;
 END STORE_STOCKOUT_ORDER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -7414,6 +8256,7 @@ END STORE_STOCKOUT_ORDER_DTL_TAPI;
 
 END STORE_STOCKOUT_ORDER_TAPI;
 
+
 /
 --------------------------------------------------------
 --  DDL for Package Body STORE_TRANSFER_DTL_TAPI
@@ -7489,6 +8332,7 @@ END STORE_STOCKOUT_ORDER_TAPI;
 
     END DEL_DTL;
 END STORE_TRANSFER_DTL_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -7583,6 +8427,7 @@ END STORE_TRANSFER_DTL_TAPI;
     END DELETE_STORE_TRANSFER;
 
 END STORE_TRANSFER_TAPI;
+
 
 /
 --------------------------------------------------------
@@ -10111,5 +10956,6 @@ raise;
 END;
 
 END ZT_QR;
+
 
 /
